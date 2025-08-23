@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tag {
+  id       String @id @default(uuid())
+  nome     String @unique @db.VarChar(50)
+  cor      String @db.VarChar(7)
+  criadaEm DateTime @default(now()) @map("criada_em")
+
+  // Relacionamentos
+  receitas ReceitaTag[]
+  despesas DespesaTag[]
+
+  @@map("tags")
+}
+
+model Receita {
+  id            String   @id @default(uuid())
+  descricao     String   @db.VarChar(200)
+  valor         Decimal  @db.Decimal(10, 2)
+  data          DateTime
+  criadaEm      DateTime @default(now()) @map("criada_em")
+  atualizadaEm  DateTime @updatedAt @map("atualizada_em")
+
+  // Relacionamentos
+  tags ReceitaTag[]
+
+  @@map("receitas")
+}
+
+model Despesa {
+  id            String   @id @default(uuid())
+  descricao     String   @db.VarChar(200)
+  valor         Decimal  @db.Decimal(10, 2)
+  data          DateTime
+  criadaEm      DateTime @default(now()) @map("criada_em")
+  atualizadaEm  DateTime @updatedAt @map("atualizada_em")
+
+  // Relacionamentos
+  tags DespesaTag[]
+
+  @@map("despesas")
+}
+
+// Tabela de relacionamento N:N entre Receita e Tag
+model ReceitaTag {
+  receitaId String
+  tagId     String
+
+  receita Receita @relation(fields: [receitaId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([receitaId, tagId])
+  @@map("receita_tags")
+}
+
+// Tabela de relacionamento N:N entre Despesa e Tag
+model DespesaTag {
+  despesaId String
+  tagId     String
+
+  despesa Despesa @relation(fields: [despesaId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([despesaId, tagId])
+  @@map("despesa_tags")
+}

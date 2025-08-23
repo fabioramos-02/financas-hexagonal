@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # Banco de dados PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: financas-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: financas
+      POSTGRES_USER: financas_user
+      POSTGRES_PASSWORD: financas_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - financas-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U financas_user -d financas"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Aplicação Next.js
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: financas-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://financas_user:financas_password@db:5432/financas
+      - NEXTAUTH_SECRET=your-secret-key-here
+      - NEXTAUTH_URL=http://localhost:3000
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - financas-network
+    volumes:
+      - ./prisma:/app/prisma
+    command: >
+      sh -c "npx prisma migrate deploy &&
+             npx prisma db seed &&
+             node server.js"
+
+  # Adminer para gerenciamento do banco (opcional)
+  adminer:
+    image: adminer:4.8.1
+    container_name: financas-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    depends_on:
+      - db
+    networks:
+      - financas-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  financas-network:
+    driver: bridge
