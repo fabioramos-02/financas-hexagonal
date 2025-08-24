@@ -72,7 +72,7 @@ export default function CadastrarReceita() {
         body: JSON.stringify({
           descricao,
           valor: parseFloat(valor),
-          data: new Date(data).toISOString(),
+          data: new Date(data || new Date()).toISOString(),
           tagIds: tagsSelecionadas
         })
       });

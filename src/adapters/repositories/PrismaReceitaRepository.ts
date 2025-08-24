@@ -7,7 +7,7 @@ import { ReceitaMapper } from '../mappers/ReceitaMapper';
 export class PrismaReceitaRepository implements IReceitaRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async salvar(receita: Receita): Promise<Receita> {
+  async salvar(receita: Receita): Promise<void> {
     const { data, tagIds } = ReceitaMapper.toCreateData(receita);
 
     const existeReceita = await this.prisma.receita.findUnique({
@@ -56,10 +56,9 @@ export class PrismaReceitaRepository implements IReceitaRepository {
         }
       });
 
-      return ReceitaMapper.toDomain(receitaFinal!);
     } else {
       // Criar nova receita
-      const receitaCriada = await this.prisma.receita.create({
+      await this.prisma.receita.create({
         data,
         include: {
           tags: {
@@ -79,20 +78,6 @@ export class PrismaReceitaRepository implements IReceitaRepository {
           }))
         });
       }
-
-      // Buscar receita com tags
-      const receitaFinal = await this.prisma.receita.findUnique({
-        where: { id: receita.id },
-        include: {
-          tags: {
-            include: {
-              tag: true
-            }
-          }
-        }
-      });
-
-      return ReceitaMapper.toDomain(receitaFinal!);
     }
   }
 
@@ -126,7 +111,10 @@ export class PrismaReceitaRepository implements IReceitaRepository {
     return ReceitaMapper.toDomainList(receitas);
   }
 
-  async listarPorPeriodo(dataInicio: Date, dataFim: Date): Promise<Receita[]> {
+  async listarPorPeriodo(periodo: PeriodoResumo): Promise<Receita[]> {
+    const dataInicio = new Date(periodo.ano, periodo.mes - 1, 1);
+    const dataFim = new Date(periodo.ano, periodo.mes, 0);
+    
     const receitas = await this.prisma.receita.findMany({
       where: {
         data: {
@@ -169,21 +157,39 @@ export class PrismaReceitaRepository implements IReceitaRepository {
     return ReceitaMapper.toDomainList(receitas);
   }
 
-  async listarComPaginacao(pagina: number, tamanhoPagina: number): Promise<Receita[]> {
-    const receitas = await this.prisma.receita.findMany({
-      skip: (pagina - 1) * tamanhoPagina,
-      take: tamanhoPagina,
-      include: {
-        tags: {
-          include: {
-            tag: true
+  async listarComPaginacao(
+    pagina: number,
+    itensPorPagina: number
+  ): Promise<{
+    receitas: Receita[];
+    total: number;
+    pagina: number;
+    totalPaginas: number;
+  }> {
+    const [receitas, total] = await Promise.all([
+      this.prisma.receita.findMany({
+        skip: (pagina - 1) * itensPorPagina,
+        take: itensPorPagina,
+        include: {
+          tags: {
+            include: {
+              tag: true
+            }
           }
-        }
-      },
-      orderBy: { data: 'desc' }
-    });
+        },
+        orderBy: { data: 'desc' }
+      }),
+      this.prisma.receita.count()
+    ]);
 
-    return ReceitaMapper.toDomainList(receitas);
+    const totalPaginas = Math.ceil(total / itensPorPagina);
+
+    return {
+      receitas: ReceitaMapper.toDomainList(receitas),
+      total,
+      pagina,
+      totalPaginas
+    };
   }
 
   async buscarPorDescricao(descricao: string): Promise<Receita[]> {

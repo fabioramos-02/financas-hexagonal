@@ -7,7 +7,7 @@ import { DespesaMapper } from '../mappers/DespesaMapper';
 export class PrismaDespesaRepository implements IDespesaRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async salvar(despesa: Despesa): Promise<Despesa> {
+  async salvar(despesa: Despesa): Promise<void> {
     const { data, tagIds } = DespesaMapper.toCreateData(despesa);
 
     const existeDespesa = await this.prisma.despesa.findUnique({
@@ -56,10 +56,9 @@ export class PrismaDespesaRepository implements IDespesaRepository {
         }
       });
 
-      return DespesaMapper.toDomain(despesaFinal!);
     } else {
       // Criar nova despesa
-      const despesaCriada = await this.prisma.despesa.create({
+      await this.prisma.despesa.create({
         data,
         include: {
           tags: {
@@ -79,20 +78,6 @@ export class PrismaDespesaRepository implements IDespesaRepository {
           }))
         });
       }
-
-      // Buscar despesa com tags
-      const despesaFinal = await this.prisma.despesa.findUnique({
-        where: { id: despesa.id },
-        include: {
-          tags: {
-            include: {
-              tag: true
-            }
-          }
-        }
-      });
-
-      return DespesaMapper.toDomain(despesaFinal!);
     }
   }
 
@@ -126,7 +111,10 @@ export class PrismaDespesaRepository implements IDespesaRepository {
     return DespesaMapper.toDomainList(despesas);
   }
 
-  async listarPorPeriodo(dataInicio: Date, dataFim: Date): Promise<Despesa[]> {
+  async listarPorPeriodo(periodo: PeriodoResumo): Promise<Despesa[]> {
+    const dataInicio = new Date(periodo.ano, periodo.mes - 1, 1);
+    const dataFim = new Date(periodo.ano, periodo.mes, 0);
+    
     const despesas = await this.prisma.despesa.findMany({
       where: {
         data: {
@@ -169,21 +157,39 @@ export class PrismaDespesaRepository implements IDespesaRepository {
     return DespesaMapper.toDomainList(despesas);
   }
 
-  async listarComPaginacao(pagina: number, tamanhoPagina: number): Promise<Despesa[]> {
-    const despesas = await this.prisma.despesa.findMany({
-      skip: (pagina - 1) * tamanhoPagina,
-      take: tamanhoPagina,
-      include: {
-        tags: {
-          include: {
-            tag: true
+  async listarComPaginacao(
+    pagina: number,
+    itensPorPagina: number
+  ): Promise<{
+    despesas: Despesa[];
+    total: number;
+    pagina: number;
+    totalPaginas: number;
+  }> {
+    const [despesas, total] = await Promise.all([
+      this.prisma.despesa.findMany({
+        skip: (pagina - 1) * itensPorPagina,
+        take: itensPorPagina,
+        include: {
+          tags: {
+            include: {
+              tag: true
+            }
           }
-        }
-      },
-      orderBy: { data: 'desc' }
-    });
+        },
+        orderBy: { data: 'desc' }
+      }),
+      this.prisma.despesa.count()
+    ]);
 
-    return DespesaMapper.toDomainList(despesas);
+    const totalPaginas = Math.ceil(total / itensPorPagina);
+
+    return {
+      despesas: DespesaMapper.toDomainList(despesas),
+      total,
+      pagina,
+      totalPaginas
+    };
   }
 
   async buscarPorDescricao(descricao: string): Promise<Despesa[]> {

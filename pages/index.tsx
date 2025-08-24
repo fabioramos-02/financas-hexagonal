@@ -34,11 +34,11 @@ export default function HomePage() {
     try {
       setLoading(true);
       const hoje = new Date();
-      const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-      const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+      const mes = hoje.getMonth() + 1; // getMonth() retorna 0-11
+      const ano = hoje.getFullYear();
 
       const response = await fetch(
-        `/api/resumo?dataInicio=${inicioMes.toISOString()}&dataFim=${fimMes.toISOString()}`
+        `/api/resumo?mes=${mes}&ano=${ano}`
       );
 
       if (!response.ok) {

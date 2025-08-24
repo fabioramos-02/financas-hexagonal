@@ -10,14 +10,12 @@ export default async function handler(
 ) {
   if (req.method === 'GET') {
     try {
-      const { dataInicio, dataFim } = req.query;
+      const { mes, ano } = req.query;
 
-      // Validação básica
-      if (!dataInicio || !dataFim) {
-        return res.status(400).json({
-          erro: 'Parâmetros obrigatórios: dataInicio, dataFim'
-        });
-      }
+      // Se não fornecidos, usar mês/ano atual
+      const hoje = new Date();
+      const mesAtual = mes ? parseInt(mes as string) : hoje.getMonth() + 1;
+      const anoAtual = ano ? parseInt(ano as string) : hoje.getFullYear();
 
       // Instanciar repositórios
       const receitaRepository = new PrismaReceitaRepository(prisma);
@@ -31,13 +29,13 @@ export default async function handler(
 
       // Executar caso de uso
       const resultado = await gerarResumo.executar({
-        dataInicio: new Date(dataInicio as string),
-        dataFim: new Date(dataFim as string)
+        mes: mesAtual,
+        ano: anoAtual
       });
 
       if (!resultado.sucesso) {
         return res.status(400).json({
-          erro: resultado.erro
+          erro: resultado.mensagem
         });
       }
 
@@ -51,12 +49,12 @@ export default async function handler(
           saldo: resumo.saldo.valor,
           quantidadeReceitas: resumo.quantidadeReceitas,
           quantidadeDespesas: resumo.quantidadeDespesas,
-          mediaReceitas: resumo.obterMediaReceitas().valor,
-          mediaDespesas: resumo.obterMediaDespesas().valor,
+          mediaReceitas: resumo.mediaReceitas.valor,
+          mediaDespesas: resumo.mediaDespesas.valor,
           geradoEm: resumo.geradoEm,
           periodo: {
-            inicio: resumo.dataInicio,
-            fim: resumo.dataFim
+            mes: resumo.periodo.mes,
+            ano: resumo.periodo.ano
           }
         }
       });

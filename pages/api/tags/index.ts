@@ -31,15 +31,15 @@ export default async function handler(
 
       // Criar nova tag
       const novaTag = Tag.criar(nome, cor);
-      const tagSalva = await tagRepository.salvar(novaTag);
+      await tagRepository.salvar(novaTag);
 
       return res.status(201).json({
         sucesso: true,
         tag: {
-          id: tagSalva.id,
-          nome: tagSalva.nome,
-          cor: tagSalva.cor,
-          criadaEm: tagSalva.criadaEm
+          id: novaTag.id,
+          nome: novaTag.nome,
+          cor: novaTag.cor,
+          criadaEm: novaTag.criadaEm
         }
       });
     } catch (error) {

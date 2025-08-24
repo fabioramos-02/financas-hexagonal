@@ -75,6 +75,9 @@ export class DataTransacao {
     
     if (dataString.includes('/')) {
       const [dia, mes, ano] = dataString.split('/');
+      if (!dia || !mes || !ano) {
+        throw new Error('Formato de data inválido');
+      }
       data = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
     } else if (dataString.includes('-')) {
       if (dataString.length === 10 && dataString.indexOf('-') === 4) {
@@ -83,6 +86,9 @@ export class DataTransacao {
       } else {
         // Formato DD-MM-YYYY
         const [dia, mes, ano] = dataString.split('-');
+        if (!dia || !mes || !ano) {
+          throw new Error('Formato de data inválido');
+        }
         data = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
       }
     } else {

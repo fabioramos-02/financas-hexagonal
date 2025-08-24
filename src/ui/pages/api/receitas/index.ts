@@ -39,7 +39,7 @@ export default async function handler(
 
       if (!resultado.sucesso) {
         return res.status(400).json({
-          erro: resultado.erro
+          erro: resultado.mensagem
         });
       }
 

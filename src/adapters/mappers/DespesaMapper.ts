@@ -1,4 +1,4 @@
-import { Despesa as PrismaDespesa, DespesaTag, Tag as PrismaTag } from '@prisma/client';
+import { Despesa as PrismaDespesa, DespesaTag, Tag as PrismaTag, Prisma } from '@prisma/client';
 import { Despesa } from '../../core/entities/Despesa';
 import { ValorMonetario } from '../../core/value-objects/ValorMonetario';
 import { DataTransacao } from '../../core/value-objects/DataTransacao';
@@ -18,7 +18,7 @@ export class DespesaMapper {
     return {
       id: despesa.id,
       descricao: despesa.descricao,
-      valor: despesa.valor.toNumber(),
+      valor: new Prisma.Decimal(despesa.valor.toNumber()),
       data: despesa.data.data
     };
   }
@@ -60,7 +60,7 @@ export class DespesaMapper {
       data: {
         id: despesa.id,
         descricao: despesa.descricao,
-        valor: despesa.valor.toNumber(),
+        valor: new Prisma.Decimal(despesa.valor.toNumber()),
         data: despesa.data.data
       },
       tagIds: despesa.tags.map(tag => tag.id)
@@ -77,7 +77,7 @@ export class DespesaMapper {
     return {
       data: {
         descricao: despesa.descricao,
-        valor: despesa.valor.toNumber(),
+        valor: new Prisma.Decimal(despesa.valor.toNumber()),
         data: despesa.data.data
       },
       tagIds: despesa.tags.map(tag => tag.id)

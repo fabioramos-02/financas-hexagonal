@@ -9,8 +9,7 @@ export class TagMapper {
     return {
       id: tag.id,
       nome: tag.nome,
-      cor: tag.cor,
-      criadaEm: tag.criadaEm
+      cor: tag.cor
     };
   }
 

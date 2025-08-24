@@ -1,4 +1,4 @@
-import { Receita as PrismaReceita, ReceitaTag, Tag as PrismaTag } from '@prisma/client';
+import { Receita as PrismaReceita, ReceitaTag, Tag as PrismaTag, Prisma } from '@prisma/client';
 import { Receita } from '../../core/entities/Receita';
 import { ValorMonetario } from '../../core/value-objects/ValorMonetario';
 import { DataTransacao } from '../../core/value-objects/DataTransacao';
@@ -18,7 +18,7 @@ export class ReceitaMapper {
     return {
       id: receita.id,
       descricao: receita.descricao,
-      valor: receita.valor.toNumber(),
+      valor: new Prisma.Decimal(receita.valor.toNumber()),
       data: receita.data.data
     };
   }
@@ -60,7 +60,7 @@ export class ReceitaMapper {
       data: {
         id: receita.id,
         descricao: receita.descricao,
-        valor: receita.valor.toNumber(),
+        valor: new Prisma.Decimal(receita.valor.toNumber()),
         data: receita.data.data
       },
       tagIds: receita.tags.map(tag => tag.id)
@@ -77,7 +77,7 @@ export class ReceitaMapper {
     return {
       data: {
         descricao: receita.descricao,
-        valor: receita.valor.toNumber(),
+        valor: new Prisma.Decimal(receita.valor.toNumber()),
         data: receita.data.data
       },
       tagIds: receita.tags.map(tag => tag.id)
