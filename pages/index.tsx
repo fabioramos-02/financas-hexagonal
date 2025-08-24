@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { Add as AddIcon, TrendingUp, TrendingDown, AccountBalance } from '@mui/icons-material';
 import Link from 'next/link';
+import CadastroTransacaoModal from '../src/ui/components/CadastroTransacaoModal';
 
 interface ResumoFinanceiro {
   totalReceitas: number;
@@ -25,6 +26,7 @@ export default function HomePage() {
   const [resumo, setResumo] = useState<ResumoFinanceiro | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [modalAberto, setModalAberto] = useState(false);
 
   useEffect(() => {
     carregarResumo();
@@ -144,35 +146,20 @@ export default function HomePage() {
       </Grid>
 
       <Grid container spacing={2}>
-        <Grid item xs={12} sm={6} md={4}>
-          <Link href="/receitas/cadastrar" passHref>
-            <Button
-              variant="contained"
-              color="success"
-              fullWidth
-              size="large"
-              startIcon={<AddIcon />}
-              sx={{ py: 2 }}
-            >
-              Nova Receita
-            </Button>
-          </Link>
+        <Grid item xs={12} sm={6} md={6}>
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            size="large"
+            startIcon={<AddIcon />}
+            onClick={() => setModalAberto(true)}
+            sx={{ py: 2 }}
+          >
+            Nova Transação
+          </Button>
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <Link href="/despesas/cadastrar" passHref>
-            <Button
-              variant="contained"
-              color="error"
-              fullWidth
-              size="large"
-              startIcon={<AddIcon />}
-              sx={{ py: 2 }}
-            >
-              Nova Despesa
-            </Button>
-          </Link>
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={6}>
           <Link href="/transacoes" passHref>
             <Button
               variant="outlined"
@@ -185,6 +172,15 @@ export default function HomePage() {
           </Link>
         </Grid>
       </Grid>
+
+      <CadastroTransacaoModal
+        open={modalAberto}
+        onClose={() => setModalAberto(false)}
+        onSuccess={() => {
+          carregarResumo();
+          setModalAberto(false);
+        }}
+      />
     </Container>
   );
 }
