@@ -21,7 +21,7 @@ import {
   TextField,
   SelectChangeEvent
 } from '@mui/material';
-import { Add, AttachMoney, AccountBalance, Assessment } from '@mui/icons-material';
+import { Add, AttachMoney, AccountBalance, Assessment, TrendingUp, TrendingDown } from '@mui/icons-material';
 import CadastroTransacaoModal from '../../src/ui/components/CadastroTransacaoModal';
 
 interface Tag {
@@ -99,7 +99,7 @@ export default function Transacoes() {
         setTags(data.tags || []);
       }
     } catch (err) {
-      console.error('Erro ao carregar tags:', err);
+      // Erro ao carregar tags
     }
   };
 
@@ -162,7 +162,7 @@ export default function Transacoes() {
         if (!stats[tag.id]) {
           stats[tag.id] = { nome: tag.nome, cor: tag.cor, receitas: 0, despesas: 0 };
         }
-        stats[tag.id].receitas += receita.valor;
+        stats[tag.id]!.receitas += receita.valor;
       });
     });
     
@@ -171,7 +171,7 @@ export default function Transacoes() {
         if (!stats[tag.id]) {
           stats[tag.id] = { nome: tag.nome, cor: tag.cor, receitas: 0, despesas: 0 };
         }
-        stats[tag.id].despesas += despesa.valor;
+        stats[tag.id]!.despesas += despesa.valor;
       });
     });
     

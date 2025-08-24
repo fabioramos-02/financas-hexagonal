@@ -58,7 +58,7 @@ export default async function handler(
         }
       });
     } catch (error) {
-      console.error('Erro ao cadastrar receita:', error);
+      // Erro ao cadastrar receita
       return res.status(500).json({
         erro: 'Erro interno do servidor'
       });
@@ -82,7 +82,7 @@ export default async function handler(
         }))
       });
     } catch (error) {
-      console.error('Erro ao listar receitas:', error);
+      // Erro ao listar receitas
       return res.status(500).json({
         erro: 'Erro interno do servidor'
       });

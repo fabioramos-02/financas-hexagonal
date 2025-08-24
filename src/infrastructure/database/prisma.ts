@@ -15,7 +15,7 @@ class PrismaService {
 
       // Conectar ao banco de dados
       PrismaService.instance.$connect().catch((error) => {
-        console.error('Erro ao conectar com o banco de dados:', error);
+        // Erro ao conectar com o banco de dados
         process.exit(1);
       });
 

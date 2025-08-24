@@ -1,38 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
+  Container,
   Typography,
+  Box,
   Button,
-  Card,
-  CardContent,
-  Grid,
-  Chip,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
+  Grid,
+  Card,
+  CardContent,
+  IconButton,
+  Chip,
   Alert,
   CircularProgress,
-  Fab,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
+  Paper,
+  CardActions,
+  Divider,
 } from '@mui/material';
-import {
-  Add,
-  Edit,
-  Delete,
-  Palette,
-  Category,
-} from '@mui/icons-material';
+import { Add, Edit, Delete, Palette, Category } from '@mui/icons-material';
+import IconSelector, { getIconByName } from '../../src/ui/components/IconSelector';
 
 interface Tag {
   id: string;
   nome: string;
   cor: string;
+  icone?: string;
   criadaEm: string;
 }
 
@@ -62,7 +57,8 @@ export default function Categorias() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
   const [nome, setNome] = useState('');
-  const [corSelecionada, setCorSelecionada] = useState(coresPredefinidas[0]);
+  const [cor, setCor] = useState(coresPredefinidas[0]);
+  const [icone, setIcone] = useState('Category');
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
@@ -81,7 +77,7 @@ export default function Categorias() {
         setError(data.erro || 'Erro ao carregar categorias');
       }
     } catch (error) {
-      console.error('Erro ao carregar tags:', error);
+      // Erro ao carregar tags
       setError('Erro ao conectar com o servidor');
     } finally {
       setLoading(false);
@@ -92,11 +88,13 @@ export default function Categorias() {
     if (tag) {
       setEditingTag(tag);
       setNome(tag.nome);
-      setCorSelecionada(tag.cor);
+      setCor(tag.cor);
+      setIcone(tag.icone || 'Category');
     } else {
       setEditingTag(null);
       setNome('');
-      setCorSelecionada(coresPredefinidas[0]);
+      setCor(coresPredefinidas[0]);
+      setIcone('Category');
     }
     setModalOpen(true);
   };
@@ -105,7 +103,8 @@ export default function Categorias() {
     setModalOpen(false);
     setEditingTag(null);
     setNome('');
-    setCorSelecionada(coresPredefinidas[0]);
+    setCor(coresPredefinidas[0]);
+    setIcone('Category');
   };
 
   const salvarTag = async () => {
@@ -116,16 +115,30 @@ export default function Categorias() {
 
     try {
       setSalvando(true);
-      const response = await fetch('/api/tags', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          nome: nome.trim(),
-          cor: corSelecionada,
-        }),
-      });
+      const payload = {
+        nome: nome.trim(),
+        cor: cor,
+        icone: icone,
+      };
+
+      let response;
+      if (editingTag) {
+        response = await fetch(`/api/tags/${editingTag.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        response = await fetch('/api/tags', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+      }
 
       const data = await response.json();
 
@@ -137,7 +150,7 @@ export default function Categorias() {
         setError(data.erro || 'Erro ao salvar categoria');
       }
     } catch (error) {
-      console.error('Erro ao salvar tag:', error);
+      // Erro ao salvar tag
       setError('Erro ao conectar com o servidor');
     } finally {
       setSalvando(false);
@@ -161,7 +174,7 @@ export default function Categorias() {
         setError(data.erro || 'Erro ao excluir categoria');
       }
     } catch (error) {
-      console.error('Erro ao excluir tag:', error);
+      // Erro ao excluir tag
       setError('Erro ao conectar com o servidor');
     }
   };
@@ -215,41 +228,79 @@ export default function Categorias() {
           </CardContent>
         </Card>
       ) : (
-        <Grid container spacing={2}>
+        <Grid container spacing={3}>
           {tags.map((tag) => (
             <Grid item xs={12} sm={6} md={4} key={tag.id}>
-              <Card sx={{ height: '100%' }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                    <Chip
-                      label={tag.nome}
-                      sx={{
-                        bgcolor: tag.cor,
-                        color: 'white',
-                        fontWeight: 'bold',
+              <Card 
+                sx={{ 
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: 3,
+                  }
+                }}
+              >
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Box display="flex" alignItems="center" mb={2}>
+                    <Box 
+                      sx={{ 
+                        mr: 2, 
+                        p: 1, 
+                        borderRadius: 1, 
+                        backgroundColor: tag.cor + '20',
+                        color: tag.cor,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}
-                    />
-                    <Box>
-                      <IconButton
-                        size="small"
-                        onClick={() => abrirModal(tag)}
-                        sx={{ mr: 1 }}
-                      >
-                        <Edit fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => excluirTag(tag.id)}
-                      >
-                        <Delete fontSize="small" />
-                      </IconButton>
+                    >
+                      {getIconByName(tag.icone || 'Category')}
+                    </Box>
+                    <Box flexGrow={1}>
+                      <Typography variant="h6" component="h3" noWrap>
+                        {tag.nome}
+                      </Typography>
                     </Box>
                   </Box>
-                  <Typography variant="body2" color="text.secondary">
+                  
+                  <Box display="flex" alignItems="center" mb={1}>
+                    <Chip
+                      size="small"
+                      label="Cor"
+                      sx={{ 
+                        backgroundColor: tag.cor, 
+                        color: 'white',
+                        minWidth: 60
+                      }}
+                    />
+                  </Box>
+                  
+                  <Typography variant="caption" color="text.secondary">
                     Criada em: {new Date(tag.criadaEm).toLocaleDateString('pt-BR')}
                   </Typography>
                 </CardContent>
+                
+                <Divider />
+                
+                <CardActions sx={{ justifyContent: 'flex-end', p: 1 }}>
+                  <IconButton 
+                    onClick={() => abrirModal(tag)} 
+                    size="small"
+                    sx={{ color: 'primary.main' }}
+                  >
+                    <Edit fontSize="small" />
+                  </IconButton>
+                  <IconButton 
+                    onClick={() => excluirTag(tag.id)} 
+                    size="small" 
+                    sx={{ color: 'error.main' }}
+                  >
+                    <Delete fontSize="small" />
+                  </IconButton>
+                </CardActions>
               </Card>
             </Grid>
           ))}
@@ -257,7 +308,7 @@ export default function Categorias() {
       )}
 
       {/* Modal de Cadastro/Edição */}
-      <Dialog open={modalOpen} onClose={fecharModal} maxWidth="sm" fullWidth>
+      <Dialog open={modalOpen} onClose={fecharModal} maxWidth="md" fullWidth>
         <DialogTitle>
           {editingTag ? 'Editar Categoria' : 'Nova Categoria'}
         </DialogTitle>
@@ -272,47 +323,69 @@ export default function Categorias() {
               autoFocus
             />
             
+            <Box sx={{ mb: 3 }}>
+              <IconSelector
+                selectedIcon={icone}
+                onIconSelect={setIcone}
+              />
+            </Box>
+            
             <Typography variant="subtitle1" sx={{ mb: 2 }}>
               Escolha uma cor:
             </Typography>
             
-            <Grid container spacing={1}>
-              {coresPredefinidas.map((cor) => (
-                <Grid item key={cor}>
+            <Grid container spacing={1} sx={{ mb: 3 }}>
+              {coresPredefinidas.map((corOption) => (
+                <Grid item key={corOption}>
                   <IconButton
-                    onClick={() => setCorSelecionada(cor)}
+                    onClick={() => setCor(corOption)}
                     sx={{
-                      bgcolor: cor,
+                      bgcolor: corOption,
                       width: 40,
                       height: 40,
-                      border: corSelecionada === cor ? '3px solid #000' : '1px solid #ccc',
+                      border: cor === corOption ? '3px solid #000' : '1px solid #ccc',
                       '&:hover': {
-                        bgcolor: cor,
+                        bgcolor: corOption,
                         opacity: 0.8,
                       },
                     }}
                   >
-                    {corSelecionada === cor && <Palette sx={{ color: 'white', fontSize: 20 }} />}
+                    {cor === corOption && <Palette sx={{ color: 'white', fontSize: 20 }} />}
                   </IconButton>
                 </Grid>
               ))}
             </Grid>
             
-            {nome && (
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Pré-visualização:
-                </Typography>
-                <Chip
-                  label={nome}
-                  sx={{
-                    bgcolor: corSelecionada,
-                    color: 'white',
-                    fontWeight: 'bold',
-                  }}
-                />
+            <Typography variant="subtitle2" sx={{ mb: 2 }}>
+              Pré-visualização:
+            </Typography>
+            <Box display="flex" alignItems="center" gap={2}>
+              <Chip
+                icon={getIconByName(icone)}
+                label={nome || 'Nome da categoria'}
+                sx={{
+                  bgcolor: cor,
+                  color: 'white',
+                  fontWeight: 'bold',
+                  '& .MuiChip-icon': {
+                    color: 'white'
+                  }
+                }}
+              />
+              <Box 
+                sx={{ 
+                  p: 1, 
+                  borderRadius: 1, 
+                  backgroundColor: cor + '20',
+                  color: cor,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                {getIconByName(icone)}
               </Box>
-            )}
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions>
@@ -322,7 +395,7 @@ export default function Categorias() {
             variant="contained"
             disabled={salvando || !nome.trim()}
           >
-            {salvando ? <CircularProgress size={20} /> : 'Salvar'}
+            {salvando ? <CircularProgress size={20} /> : (editingTag ? 'Atualizar' : 'Criar')}
           </Button>
         </DialogActions>
       </Dialog>

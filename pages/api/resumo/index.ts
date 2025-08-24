@@ -59,7 +59,7 @@ export default async function handler(
         }
       });
     } catch (error) {
-      console.error('Erro ao gerar resumo financeiro:', error);
+      // Erro ao gerar resumo financeiro
       return res.status(500).json({
         erro: 'Erro interno do servidor'
       });

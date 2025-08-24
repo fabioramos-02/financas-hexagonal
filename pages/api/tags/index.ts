@@ -9,7 +9,7 @@ export default async function handler(
 ) {
   if (req.method === 'POST') {
     try {
-      const { nome, cor } = req.body;
+      const { nome, cor, icone } = req.body;
 
       // Validação básica
       if (!nome || !cor) {
@@ -30,7 +30,7 @@ export default async function handler(
       }
 
       // Criar nova tag
-      const novaTag = Tag.criar(nome, cor);
+      const novaTag = Tag.criar(nome, cor, icone || 'Category');
       await tagRepository.salvar(novaTag);
 
       return res.status(201).json({
@@ -39,11 +39,12 @@ export default async function handler(
           id: novaTag.id,
           nome: novaTag.nome,
           cor: novaTag.cor,
+          icone: novaTag.icone,
           criadaEm: novaTag.criadaEm
         }
       });
     } catch (error) {
-      console.error('Erro ao cadastrar tag:', error);
+      // Erro ao cadastrar tag
       return res.status(500).json({
         erro: 'Erro interno do servidor'
       });
@@ -62,7 +63,7 @@ export default async function handler(
         }))
       });
     } catch (error) {
-      console.error('Erro ao listar tags:', error);
+      // Erro ao listar tags
       return res.status(500).json({
         erro: 'Erro interno do servidor'
       });

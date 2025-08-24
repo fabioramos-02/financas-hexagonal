@@ -196,8 +196,7 @@ export class PrismaDespesaRepository implements IDespesaRepository {
     const despesas = await this.prisma.despesa.findMany({
       where: {
         descricao: {
-          contains: descricao,
-          mode: 'insensitive'
+          contains: descricao
         }
       },
       include: {

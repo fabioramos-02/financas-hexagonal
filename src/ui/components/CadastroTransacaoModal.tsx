@@ -138,7 +138,7 @@ export default function CadastroTransacaoModal({
         setTagsDisponiveis(data.tags);
       }
     } catch (error) {
-      console.error('Erro ao carregar tags:', error);
+      // Erro ao carregar tags
     }
   };
 

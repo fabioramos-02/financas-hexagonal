@@ -14,6 +14,7 @@ model Tag {
   id       String @id @default(uuid())
   nome     String @unique
   cor      String
+  icone    String @default("Category")
   criadaEm DateTime @default(now()) @map("criada_em")
 
   // Relacionamentos

@@ -49,7 +49,7 @@ export default function CadastrarReceita() {
         setTagsDisponiveis(data.tags);
       }
     } catch (err) {
-      console.error('Erro ao carregar tags:', err);
+      // Erro ao carregar tags
     }
   };
 

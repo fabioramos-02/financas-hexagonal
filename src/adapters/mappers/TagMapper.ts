@@ -9,7 +9,8 @@ export class TagMapper {
     return {
       id: tag.id,
       nome: tag.nome,
-      cor: tag.cor
+      cor: tag.cor,
+      icone: tag.icone
     };
   }
 
@@ -21,6 +22,7 @@ export class TagMapper {
       prismaTag.id,
       prismaTag.nome,
       prismaTag.cor,
+      prismaTag.icone,
       prismaTag.criadaEm
     );
   }
@@ -39,17 +41,19 @@ export class TagMapper {
     return {
       id: tag.id,
       nome: tag.nome,
-      cor: tag.cor
+      cor: tag.cor,
+      icone: tag.icone
     };
   }
 
   /**
    * Converte dados para atualização no Prisma
    */
-  static toUpdateData(tag: Tag): Partial<Pick<PrismaTag, 'nome' | 'cor'>> {
+  static toUpdateData(tag: Tag): Partial<Pick<PrismaTag, 'nome' | 'cor' | 'icone'>> {
     return {
       nome: tag.nome,
-      cor: tag.cor
+      cor: tag.cor,
+      icone: tag.icone
     };
   }
 }

@@ -58,7 +58,7 @@ export default async function handler(
         }
       });
     } catch (error) {
-      console.error('Erro ao cadastrar despesa:', error);
+      // Erro ao cadastrar despesa
       return res.status(500).json({
         erro: 'Erro interno do servidor'
       });
@@ -82,7 +82,7 @@ export default async function handler(
         }))
       });
     } catch (error) {
-      console.error('Erro ao listar despesas:', error);
+      // Erro ao listar despesas
       return res.status(500).json({
         erro: 'Erro interno do servidor'
       });

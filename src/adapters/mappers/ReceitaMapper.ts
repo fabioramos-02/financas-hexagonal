@@ -18,7 +18,7 @@ export class ReceitaMapper {
     return {
       id: receita.id,
       descricao: receita.descricao,
-      valor: new Prisma.Decimal(receita.valor.toNumber()),
+      valor: receita.valor.toNumber(),
       data: receita.data.data
     };
   }
@@ -60,7 +60,7 @@ export class ReceitaMapper {
       data: {
         id: receita.id,
         descricao: receita.descricao,
-        valor: new Prisma.Decimal(receita.valor.toNumber()),
+        valor: receita.valor.toNumber(),
         data: receita.data.data
       },
       tagIds: receita.tags.map(tag => tag.id)
@@ -77,7 +77,7 @@ export class ReceitaMapper {
     return {
       data: {
         descricao: receita.descricao,
-        valor: new Prisma.Decimal(receita.valor.toNumber()),
+        valor: receita.valor.toNumber(),
         data: receita.data.data
       },
       tagIds: receita.tags.map(tag => tag.id)

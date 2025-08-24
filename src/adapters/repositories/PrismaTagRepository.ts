@@ -79,8 +79,7 @@ export class PrismaTagRepository implements ITagRepository {
     const tags = await this.prisma.tag.findMany({
       where: {
         nome: {
-          contains: nomeParcial,
-          mode: 'insensitive'
+          contains: nomeParcial
         }
       },
       orderBy: { nome: 'asc' }
@@ -118,6 +117,7 @@ export class PrismaTagRepository implements ITagRepository {
       id: tag.id,
       nome: tag.nome,
       cor: tag.cor,
+      icone: tag.icone,
       criadaEm: tag.criadaEm
     }));
   }

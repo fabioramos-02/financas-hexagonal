@@ -196,8 +196,7 @@ export class PrismaReceitaRepository implements IReceitaRepository {
     const receitas = await this.prisma.receita.findMany({
       where: {
         descricao: {
-          contains: descricao,
-          mode: 'insensitive'
+          contains: descricao
         }
       },
       include: {

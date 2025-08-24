@@ -27,7 +27,54 @@ export default async function handler(
       
       return res.status(200).json({ mensagem: 'Tag excluída com sucesso' });
     } catch (error) {
-      console.error('Erro ao excluir tag:', error);
+      // Erro ao excluir tag
+      return res.status(500).json({ erro: 'Erro interno do servidor' });
+    }
+  }
+
+  if (req.method === 'PUT') {
+    try {
+      const { nome, cor, icone } = req.body;
+
+      // Validação básica
+      if (!nome || !cor) {
+        return res.status(400).json({
+          erro: 'Campos obrigatórios: nome, cor'
+        });
+      }
+
+      // Verificar se a tag existe
+      const tagExistente = await tagRepository.buscarPorId(id);
+      if (!tagExistente) {
+        return res.status(404).json({ erro: 'Tag não encontrada' });
+      }
+
+      // Verificar se já existe outra tag com o mesmo nome
+      const tagComMesmoNome = await tagRepository.buscarPorNome(nome);
+      if (tagComMesmoNome && tagComMesmoNome.id !== id) {
+        return res.status(400).json({
+          erro: 'Já existe uma tag com este nome'
+        });
+      }
+
+      // Atualizar a tag
+      tagExistente.alterarNome(nome);
+      tagExistente.alterarCor(cor);
+      tagExistente.alterarIcone(icone || 'Category');
+      
+      await tagRepository.salvar(tagExistente);
+
+      return res.status(200).json({
+        sucesso: true,
+        tag: {
+          id: tagExistente.id,
+          nome: tagExistente.nome,
+          cor: tagExistente.cor,
+          icone: tagExistente.icone,
+          criadaEm: tagExistente.criadaEm
+        }
+      });
+    } catch (error) {
       return res.status(500).json({ erro: 'Erro interno do servidor' });
     }
   }
@@ -42,7 +89,7 @@ export default async function handler(
       
       return res.status(200).json({ tag });
     } catch (error) {
-      console.error('Erro ao buscar tag:', error);
+      // Erro ao buscar tag
       return res.status(500).json({ erro: 'Erro interno do servidor' });
     }
   }

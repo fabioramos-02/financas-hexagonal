@@ -51,7 +51,7 @@ export default function HomePage() {
       setResumo(data.resumo);
     } catch (err) {
       setError('Erro ao carregar dados financeiros');
-      console.error(err);
+      // Erro ao carregar dados
     } finally {
       setLoading(false);
     }

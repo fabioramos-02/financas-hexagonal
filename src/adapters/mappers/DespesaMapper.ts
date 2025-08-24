@@ -18,7 +18,7 @@ export class DespesaMapper {
     return {
       id: despesa.id,
       descricao: despesa.descricao,
-      valor: new Prisma.Decimal(despesa.valor.toNumber()),
+      valor: despesa.valor.toNumber(),
       data: despesa.data.data
     };
   }
@@ -60,7 +60,7 @@ export class DespesaMapper {
       data: {
         id: despesa.id,
         descricao: despesa.descricao,
-        valor: new Prisma.Decimal(despesa.valor.toNumber()),
+        valor: despesa.valor.toNumber(),
         data: despesa.data.data
       },
       tagIds: despesa.tags.map(tag => tag.id)
@@ -77,7 +77,7 @@ export class DespesaMapper {
     return {
       data: {
         descricao: despesa.descricao,
-        valor: new Prisma.Decimal(despesa.valor.toNumber()),
+        valor: despesa.valor.toNumber(),
         data: despesa.data.data
       },
       tagIds: despesa.tags.map(tag => tag.id)
