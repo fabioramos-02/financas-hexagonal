@@ -39,6 +39,7 @@ interface CadastroTransacaoModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  tipo?: 'receita' | 'despesa';
 }
 
 type TipoTransacao = 'receita' | 'despesa';
@@ -95,9 +96,10 @@ const parseValorMonetario = (valorFormatado: string): number => {
 export default function CadastroTransacaoModal({
   open,
   onClose,
-  onSuccess
+  onSuccess,
+  tipo
 }: CadastroTransacaoModalProps) {
-  const [tipoTransacao, setTipoTransacao] = useState<number>(0); // 0 = receita, 1 = despesa
+  const [tipoTransacao, setTipoTransacao] = useState<number>(tipo === 'despesa' ? 1 : 0); // 0 = receita, 1 = despesa
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
   const [data, setData] = useState<Date | null>(new Date());
@@ -120,6 +122,13 @@ export default function CadastroTransacaoModal({
       resetForm();
     }
   }, [open]);
+
+  // Atualizar tipo quando prop mudar
+  useEffect(() => {
+    if (tipo) {
+      setTipoTransacao(tipo === 'despesa' ? 1 : 0);
+    }
+  }, [tipo]);
 
   const carregarTags = async () => {
     try {
