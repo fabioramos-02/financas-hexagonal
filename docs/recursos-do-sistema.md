@@ -22,6 +22,14 @@ O Sistema de Gestão Financeira Pessoal oferece um conjunto completo de funciona
 - **Tags**: Exibição das categorias associadas
 - **Ordenação**: Por data (mais recentes primeiro)
 
+#### 🎨 Melhorias de Interface (2025)
+- **Layout Responsivo**: Grid adaptável (lg=4, md=6, xs=12)
+- **Cards Interativos**: Efeitos hover com elevação e transformação
+- **Tipografia Otimizada**: Truncamento de texto longo com ellipsis
+- **Estilização do Valor**: Box destacado com background e bordas
+- **Seção de Categorias**: Agrupamento visual das tags com título
+- **Animações Suaves**: Transições CSS (0.3s ease) para melhor UX
+
 #### Recursos Técnicos
 - **API Endpoint**: `GET/POST /api/receitas`
 - **Validação**: Server-side e client-side
@@ -48,6 +56,34 @@ graph TD
 ## 💸 Gestão de Despesas
 
 ### ✅ Funcionalidades Implementadas
+
+#### Cadastro de Despesas
+- **Descrição**: Campo obrigatório para identificação da despesa
+- **Valor**: Valor monetário com validação de formato
+- **Data**: Seleção de data da transação
+- **Tags**: Associação com múltiplas categorias
+- **Validações**: Campos obrigatórios e formatos corretos
+
+#### Listagem de Despesas
+- **Visualização**: Lista todas as despesas cadastradas
+- **Formatação**: Valores em formato monetário brasileiro (R$)
+- **Datas**: Formato brasileiro (DD/MM/AAAA)
+- **Tags**: Exibição das categorias associadas
+- **Ordenação**: Por data (mais recentes primeiro)
+
+#### 🎨 Melhorias de Interface (2025)
+- **Layout Responsivo**: Grid adaptável (lg=4, md=6, xs=12)
+- **Cards Interativos**: Efeitos hover com elevação e transformação
+- **Tipografia Otimizada**: Truncamento de texto longo com ellipsis
+- **Estilização do Valor**: Box destacado com background e bordas
+- **Seção de Categorias**: Agrupamento visual das tags com título
+- **Animações Suaves**: Transições CSS (0.3s ease) para melhor UX
+
+#### Recursos Técnicos
+- **API Endpoint**: `GET/POST /api/despesas`
+- **Validação**: Server-side e client-side
+- **Persistência**: PostgreSQL via Prisma ORM
+- **Mapeamento**: Domain ↔ Database via mappers
 
 #### Cadastro de Despesas
 - **Descrição**: Campo obrigatório para identificação da despesa
@@ -328,15 +364,44 @@ graph TD
 - [ ] **Mobile App**: Aplicativo nativo
 - [ ] **Inteligência Artificial**: Categorização automática
 
+## 🐛 Correções de Bugs Implementadas
+
+### ✅ Página de Transações
+
+#### Erro "transacoes.filter is not a function"
+- **Problema**: Runtime error ao carregar a página de transações
+- **Causa**: Estado `transacoes` não inicializado como array
+- **Solução**: Inicialização adequada do estado React
+- **Arquivo**: `pages/transacoes/index.tsx`
+- **Status**: ✅ Corrigido
+
+```typescript
+// Antes (com erro)
+const [transacoes, setTransacoes] = useState();
+
+// Depois (corrigido)
+const [transacoes, setTransacoes] = useState<any[]>([]);
+```
+
+#### Layout Desalinhado
+- **Problema**: Cards de receitas e despesas com layout inconsistente
+- **Solução**: Padronização do grid responsivo e estilização
+- **Melhorias**: Hover effects, tipografia otimizada, seções organizadas
+- **Status**: ✅ Corrigido
+
 ### 🎯 Melhorias Técnicas
 
 #### Performance
+- [x] **Layout Responsivo**: Grid system otimizado
+- [x] **CSS Transitions**: Animações suaves implementadas
 - [ ] **Caching**: Redis para cache de dados
 - [ ] **CDN**: Distribuição de conteúdo
 - [ ] **Database Optimization**: Otimização avançada
 - [ ] **Monitoring**: Monitoramento de performance
 
 #### Qualidade
+- [x] **Bug Fixes**: Correções de runtime errors
+- [x] **UI/UX**: Melhorias de interface implementadas
 - [ ] **Test Coverage**: 90%+ de cobertura
 - [ ] **E2E Tests**: Testes end-to-end completos
 - [ ] **CI/CD**: Pipeline de integração contínua

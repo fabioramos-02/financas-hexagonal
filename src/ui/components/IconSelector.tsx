@@ -153,6 +153,12 @@ interface IconSelectorProps {
   onIconSelect: (iconName: string) => void;
 }
 
+// Função utilitária para obter ícone por nome (movida para o final do arquivo)
+function getIconByNameInternal(iconName: string): React.ReactElement {
+  const option = iconOptions.find(opt => opt.name === iconName);
+  return option ? React.cloneElement(option.icon) : <Category />;
+}
+
 export default function IconSelector({ selectedIcon, onIconSelect }: IconSelectorProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -163,11 +169,6 @@ export default function IconSelector({ selectedIcon, onIconSelect }: IconSelecto
       option.keywords.some(keyword => keyword.toLowerCase().includes(searchLower))
     );
   });
-
-  const getIconByName = (iconName: string) => {
-    const option = iconOptions.find(opt => opt.name === iconName);
-    return option ? option.icon : <Category />;
-  };
 
   return (
     <Box>
@@ -222,7 +223,7 @@ export default function IconSelector({ selectedIcon, onIconSelect }: IconSelecto
                 color: 'white'
               }}
             >
-              {getIconByName(selectedIcon)}
+              {getIconByNameInternal(selectedIcon)}
             </Box>
             <Typography variant="body2" sx={{ fontWeight: 500, color: 'primary.main' }}>
               {selectedIcon}

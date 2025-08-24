@@ -4,14 +4,33 @@ Um sistema completo para gerenciamento de finanças pessoais desenvolvido com ar
 
 ## 🚀 Funcionalidades
 
-- ✅ Cadastro e listagem de receitas
-- ✅ Cadastro e listagem de despesas  
-- ✅ Sistema de tags para categorização
-- ✅ Resumo financeiro com totais e médias
-- ✅ Interface moderna com Material-UI
-- ✅ API REST completa
-- ✅ Validação de dados robusta
-- ✅ Arquitetura hexagonal (Clean Architecture)
+### ✅ Funcionalidades Implementadas
+
+#### 💰 Gestão Financeira
+- **Receitas**: Cadastro, listagem e gerenciamento completo
+- **Despesas**: Cadastro, listagem e controle de gastos
+- **Transações**: Visualização unificada de todas as movimentações
+- **Resumo Financeiro**: Dashboard com totais, médias e análises
+
+#### 🏷️ Sistema de Categorização
+- **Tags Personalizadas**: Criação e gerenciamento de categorias
+- **Cores Customizáveis**: Sistema visual de identificação
+- **Ícones**: Seleção de ícones para categorias
+- **Associação Múltipla**: Múltiplas tags por transação
+
+#### 🎨 Interface e Experiência
+- **Design Responsivo**: Layout adaptável para todos os dispositivos
+- **Material-UI**: Interface moderna e consistente
+- **Navegação Intuitiva**: Menu lateral com indicadores visuais
+- **Feedback Visual**: Estados de loading, erro e sucesso
+- **Cards Interativos**: Hover effects e animações suaves
+
+#### 🔧 Recursos Técnicos
+- **API REST Completa**: Endpoints para todas as operações
+- **Validação Robusta**: Client-side e server-side
+- **Arquitetura Hexagonal**: Clean Architecture implementada
+- **TypeScript**: Tipagem forte em todo o projeto
+- **Testes Automatizados**: Cobertura de testes unitários e integração
 
 ## 🏗️ Arquitetura
 
@@ -88,20 +107,30 @@ A aplicação estará disponível em `http://localhost:3000`
 
 ## 📊 Endpoints da API
 
-### Receitas
-- `GET /api/receitas` - Lista todas as receitas
+### 💰 Receitas
+- `GET /api/receitas` - Lista todas as receitas cadastradas
 - `POST /api/receitas` - Cria uma nova receita
+  - **Body**: `{ descricao, valor, data, tagIds[] }`
+  - **Validações**: Campos obrigatórios, valor positivo
 
-### Despesas  
-- `GET /api/despesas` - Lista todas as despesas
+### 💸 Despesas  
+- `GET /api/despesas` - Lista todas as despesas cadastradas
 - `POST /api/despesas` - Cria uma nova despesa
+  - **Body**: `{ descricao, valor, data, tagIds[] }`
+  - **Validações**: Campos obrigatórios, valor positivo
 
-### Tags
-- `GET /api/tags` - Lista todas as tags
+### 🏷️ Tags
+- `GET /api/tags` - Lista todas as tags disponíveis
 - `POST /api/tags` - Cria uma nova tag
+  - **Body**: `{ nome, cor, icone }`
+  - **Validações**: Nome único, cor em formato hex
+- `PUT /api/tags/[id]` - Atualiza uma tag existente
+- `DELETE /api/tags/[id]` - Remove uma tag
 
-### Resumo
-- `GET /api/resumo` - Obtém resumo financeiro do período
+### 📊 Resumo Financeiro
+- `GET /api/resumo` - Obtém resumo financeiro completo
+  - **Retorna**: Totais, médias, balanço e estatísticas
+  - **Cálculos**: Receitas, despesas, saldo atual
 
 ## 🧪 Testes
 

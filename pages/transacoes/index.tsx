@@ -2,16 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Tabs,
-  Tab,
-  List,
-  ListItem,
-  ListItemText,
   Chip,
   Alert,
   CircularProgress,
-  Button,
-  Divider,
   Grid,
   Paper,
   FormControl,
@@ -19,10 +12,12 @@ import {
   Select,
   MenuItem,
   TextField,
-  SelectChangeEvent
+  SelectChangeEvent,
+  Card,
+  CardContent,
+  LinearProgress
 } from '@mui/material';
-import { Add, AttachMoney, AccountBalance, Assessment, TrendingUp, TrendingDown } from '@mui/icons-material';
-import CadastroTransacaoModal from '../../src/ui/components/CadastroTransacaoModal';
+import { AttachMoney, AccountBalance, Assessment, TrendingUp, TrendingDown, PieChart, BarChart } from '@mui/icons-material';
 
 interface Tag {
   id: string;
@@ -46,16 +41,11 @@ interface Despesa {
   tags: Tag[];
 }
 
-
-
 export default function Transacoes() {
-  const [tabValue, setTabValue] = useState(0);
   const [receitas, setReceitas] = useState<Receita[]>([]);
   const [despesas, setDespesas] = useState<Despesa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'receita' | 'despesa'>('receita');
   const [filtroTag, setFiltroTag] = useState<string>('');
   const [filtroMes, setFiltroMes] = useState<string>('');
   const [tags, setTags] = useState<Tag[]>([]);
@@ -66,26 +56,25 @@ export default function Transacoes() {
   }, []);
 
   const carregarDados = async () => {
-    setLoading(true);
-    setError(null);
-
     try {
-      const [receitasResponse, despesasResponse] = await Promise.all([
+      setLoading(true);
+      const [receitasRes, despesasRes] = await Promise.all([
         fetch('/api/receitas'),
         fetch('/api/despesas')
       ]);
-
-      if (!receitasResponse.ok || !despesasResponse.ok) {
+      
+      if (!receitasRes.ok || !despesasRes.ok) {
         throw new Error('Erro ao carregar dados');
       }
-
-      const receitasData = await receitasResponse.json();
-      const despesasData = await despesasResponse.json();
-
+      
+      const receitasData = await receitasRes.json();
+      const despesasData = await despesasRes.json();
+      
       setReceitas(receitasData.receitas || []);
       setDespesas(despesasData.despesas || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      setError('Erro ao carregar transações');
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -96,15 +85,11 @@ export default function Transacoes() {
       const response = await fetch('/api/tags');
       if (response.ok) {
         const data = await response.json();
-        setTags(data.tags || []);
+        setTags(data);
       }
     } catch (err) {
-      // Erro ao carregar tags
+      console.error('Erro ao carregar tags:', err);
     }
-  };
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
   };
 
   const handleFiltroTagChange = (event: SelectChangeEvent) => {
@@ -113,16 +98,6 @@ export default function Transacoes() {
 
   const handleFiltroMesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setFiltroMes(event.target.value);
-  };
-
-  const abrirModal = (tipo: 'receita' | 'despesa') => {
-    setModalType(tipo);
-    setModalOpen(true);
-  };
-
-  const fecharModal = () => {
-    setModalOpen(false);
-    carregarDados(); // Recarregar dados após cadastro
   };
 
   const formatarValor = (valor: number) => {
@@ -136,24 +111,20 @@ export default function Transacoes() {
     return new Date(data).toLocaleDateString('pt-BR');
   };
 
-  // Funções de filtro
-  const filtrarTransacoes = (transacoes: (Receita | Despesa)[]) => {
+  const filtrarTransacoes = <T extends { tags: Tag[]; data: string }>(transacoes: T[]) => {
     return transacoes.filter(transacao => {
-      const passaFiltroTag = !filtroTag || transacao.tags.some(tag => tag.id === filtroTag);
-      const passaFiltroMes = !filtroMes || new Date(transacao.data).toISOString().slice(0, 7) === filtroMes;
-      return passaFiltroTag && passaFiltroMes;
+      const filtroTagMatch = !filtroTag || transacao.tags.some(tag => tag.id === filtroTag);
+      const filtroMesMatch = !filtroMes || transacao.data.startsWith(filtroMes);
+      return filtroTagMatch && filtroMesMatch;
     });
   };
 
-  // Cálculos do dashboard
   const receitasFiltradas = filtrarTransacoes(receitas);
   const despesasFiltradas = filtrarTransacoes(despesas);
-  
   const totalReceitas = receitasFiltradas.reduce((acc, receita) => acc + receita.valor, 0);
   const totalDespesas = despesasFiltradas.reduce((acc, despesa) => acc + despesa.valor, 0);
   const saldo = totalReceitas - totalDespesas;
 
-  // Estatísticas por categoria
   const estatisticasPorTag = () => {
     const stats: { [key: string]: { nome: string; cor: string; receitas: number; despesas: number } } = {};
     
@@ -162,7 +133,7 @@ export default function Transacoes() {
         if (!stats[tag.id]) {
           stats[tag.id] = { nome: tag.nome, cor: tag.cor, receitas: 0, despesas: 0 };
         }
-        stats[tag.id]!.receitas += receita.valor;
+        stats[tag.id].receitas += receita.valor;
       });
     });
     
@@ -171,224 +142,280 @@ export default function Transacoes() {
         if (!stats[tag.id]) {
           stats[tag.id] = { nome: tag.nome, cor: tag.cor, receitas: 0, despesas: 0 };
         }
-        stats[tag.id]!.despesas += despesa.valor;
+        stats[tag.id].despesas += despesa.valor;
       });
     });
     
     return Object.values(stats);
   };
 
-  const renderReceitas = () => (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6">Receitas ({receitasFiltradas.length})</Typography>
-        <Button 
-          variant="contained" 
-          color="success" 
-          startIcon={<Add />}
-          onClick={() => abrirModal('receita')}
-        >
-          Nova Receita
-        </Button>
-      </Box>
-      
-      {receitasFiltradas.length === 0 ? (
-        <Alert severity="info">
-          {receitas.length === 0 ? 'Nenhuma receita cadastrada ainda.' : 'Nenhuma receita encontrada com os filtros aplicados.'}
-        </Alert>
-      ) : (
-        <List>
-          {receitasFiltradas.map((receita, index) => (
-            <React.Fragment key={receita.id}>
-              <ListItem sx={{ px: 0 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
-                  <TrendingUp color="success" />
-                </Box>
-                <ListItemText
-                  primary={
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="subtitle1">{receita.descricao}</Typography>
-                      <Typography variant="h6" color="success.main">
-                        {formatarValor(receita.valor)}
-                      </Typography>
-                    </Box>
-                  }
-                  secondary={
-                    <Box sx={{ mt: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        {formatarData(receita.data)}
-                      </Typography>
-                      {receita.tags.length > 0 && (
-                        <Box sx={{ mt: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                          {receita.tags.map((tag) => (
-                            <Chip
-                              key={tag.id}
-                              label={tag.nome}
-                              size="small"
-                              sx={{ backgroundColor: tag.cor, color: 'white' }}
-                            />
-                          ))}
-                        </Box>
-                      )}
-                    </Box>
-                  }
-                />
-              </ListItem>
-              {index < receitasFiltradas.length - 1 && <Divider />}
-            </React.Fragment>
-          ))}
-        </List>
-      )}
-    </Box>
-  );
+  // Função para obter top categorias
+  const getTopCategorias = () => {
+    const stats = estatisticasPorTag();
+    return stats
+      .map(stat => ({
+        ...stat,
+        total: stat.receitas + stat.despesas
+      }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+  };
 
-  const renderDespesas = () => (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6">Despesas ({despesasFiltradas.length})</Typography>
-        <Button 
-          variant="contained" 
-          color="error" 
-          startIcon={<Add />}
-          onClick={() => abrirModal('despesa')}
-        >
-          Nova Despesa
-        </Button>
+  // Função para obter evolução mensal
+  const getEvolucaoMensal = () => {
+    const meses: { [key: string]: { receitas: number; despesas: number } } = {};
+    
+    receitas.forEach(receita => {
+      const mes = receita.data.substring(0, 7);
+      if (!meses[mes]) meses[mes] = { receitas: 0, despesas: 0 };
+      meses[mes].receitas += receita.valor;
+    });
+    
+    despesas.forEach(despesa => {
+      const mes = despesa.data.substring(0, 7);
+      if (!meses[mes]) meses[mes] = { receitas: 0, despesas: 0 };
+      meses[mes].despesas += despesa.valor;
+    });
+    
+    return Object.entries(meses)
+      .map(([mes, dados]) => ({ mes, ...dados }))
+      .sort((a, b) => a.mes.localeCompare(b.mes));
+  };
+
+  // Função para obter percentual por categoria
+  const getPercentualPorCategoria = () => {
+    const stats = estatisticasPorTag();
+    const totalGeral = stats.reduce((acc, stat) => acc + stat.receitas + stat.despesas, 0);
+    
+    return stats.map(stat => ({
+      ...stat,
+      percentual: totalGeral > 0 ? ((stat.receitas + stat.despesas) / totalGeral) * 100 : 0
+    }));
+  };
+
+  // Renderização da evolução mensal
+  const renderEvolucaoMensal = () => {
+    const evolucao = getEvolucaoMensal();
+    
+    return (
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+            <BarChart sx={{ mr: 1 }} />
+            Evolução Mensal
+          </Typography>
+          <Grid container spacing={2}>
+            {evolucao.map((item) => {
+              const mesFormatado = new Date(item.mes + '-01').toLocaleDateString('pt-BR', { 
+                year: 'numeric', 
+                month: 'long' 
+              });
+              const saldoMes = item.receitas - item.despesas;
+              
+              return (
+                <Grid item xs={12} md={6} lg={4} key={item.mes}>
+                  <Paper sx={{ p: 2, border: saldoMes >= 0 ? '2px solid #4caf50' : '2px solid #f44336' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1, textTransform: 'capitalize' }}>
+                      {mesFormatado}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'success.main', mb: 0.5 }}>
+                      Receitas: {formatarValor(item.receitas)}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'error.main', mb: 1 }}>
+                      Despesas: {formatarValor(item.despesas)}
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        fontWeight: 'bold',
+                        color: saldoMes >= 0 ? 'success.main' : 'error.main'
+                      }}
+                    >
+                      Saldo: {formatarValor(saldoMes)}
+                    </Typography>
+                  </Paper>
+                </Grid>
+              );
+            })}
+          </Grid>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Renderização do top categorias
+  const renderTopCategorias = () => {
+    const topCategorias = getTopCategorias();
+    
+    return (
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+            <PieChart sx={{ mr: 1 }} />
+            Top 5 Categorias por Volume
+          </Typography>
+          <Grid container spacing={2}>
+            {topCategorias.map((categoria, index) => {
+              const percentualReceitas = categoria.total > 0 ? (categoria.receitas / categoria.total) * 100 : 0;
+              
+              return (
+                <Grid item xs={12} key={categoria.nome}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="h6" sx={{ minWidth: 30, mr: 2, color: 'primary.main' }}>
+                      #{index + 1}
+                    </Typography>
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                        {categoria.nome}
+                      </Typography>
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={percentualReceitas}
+                        sx={{ 
+                          height: 8, 
+                          borderRadius: 4,
+                          bgcolor: 'grey.200',
+                          '& .MuiLinearProgress-bar': { 
+                            bgcolor: categoria.cor,
+                            borderRadius: 4
+                          }
+                        }} 
+                      />
+                    </Box>
+                    <Box sx={{ ml: 2, textAlign: 'right', minWidth: 120 }}>
+                      <Typography variant="body2" sx={{ color: 'success.main' }}>
+                        Receitas: {formatarValor(categoria.receitas)} ({percentualReceitas.toFixed(1)}%)
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: 'error.main' }}>
+                        Despesas: {formatarValor(categoria.despesas)} ({(100 - percentualReceitas).toFixed(1)}%)
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+              );
+            })}
+          </Grid>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Renderização de métricas de performance
+  const renderMetricasPerformance = () => {
+    const mediaReceitas = receitas.length > 0 ? totalReceitas / receitas.length : 0;
+    const mediaDespesas = despesas.length > 0 ? totalDespesas / despesas.length : 0;
+    const taxaEconomia = totalReceitas > 0 ? ((totalReceitas - totalDespesas) / totalReceitas) * 100 : 0;
+    
+    return (
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={3}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <TrendingUp sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
+              <Typography variant="h6" sx={{ color: 'success.main' }}>
+                Média Receitas
+              </Typography>
+              <Typography variant="h5">
+                {formatarValor(mediaReceitas)}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} md={3}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <TrendingDown sx={{ fontSize: 40, color: 'error.main', mb: 1 }} />
+              <Typography variant="h6" sx={{ color: 'error.main' }}>
+                Média Despesas
+              </Typography>
+              <Typography variant="h5">
+                {formatarValor(mediaDespesas)}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} md={3}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <Assessment sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
+              <Typography variant="h6" sx={{ color: 'primary.main' }}>
+                Taxa de Economia
+              </Typography>
+              <Typography variant="h5" sx={{
+                color: taxaEconomia >= 0 ? 'success.main' : 'error.main'
+              }}>
+                {taxaEconomia.toFixed(1)}%
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} md={3}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <AccountBalance sx={{ fontSize: 40, color: 'info.main', mb: 1 }} />
+              <Typography variant="h6" sx={{ color: 'info.main' }}>
+                Total Transações
+              </Typography>
+              <Typography variant="h5">
+                {receitas.length + despesas.length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    );
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <CircularProgress />
       </Box>
-      
-      {despesasFiltradas.length === 0 ? (
-        <Alert severity="info">
-          {despesas.length === 0 ? 'Nenhuma despesa cadastrada ainda.' : 'Nenhuma despesa encontrada com os filtros aplicados.'}
-        </Alert>
-      ) : (
-        <List>
-          {despesasFiltradas.map((despesa, index) => (
-            <React.Fragment key={despesa.id}>
-              <ListItem sx={{ px: 0 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
-                  <TrendingDown color="error" />
-                </Box>
-                <ListItemText
-                  primary={
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="subtitle1">{despesa.descricao}</Typography>
-                      <Typography variant="h6" color="error.main">
-                        -{formatarValor(despesa.valor)}
-                      </Typography>
-                    </Box>
-                  }
-                  secondary={
-                    <Box sx={{ mt: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        {formatarData(despesa.data)}
-                      </Typography>
-                      {despesa.tags.length > 0 && (
-                        <Box sx={{ mt: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                          {despesa.tags.map((tag) => (
-                            <Chip
-                              key={tag.id}
-                              label={tag.nome}
-                              size="small"
-                              sx={{ backgroundColor: tag.cor, color: 'white' }}
-                            />
-                          ))}
-                        </Box>
-                      )}
-                    </Box>
-                  }
-                />
-              </ListItem>
-              {index < despesasFiltradas.length - 1 && <Divider />}
-            </React.Fragment>
-          ))}
-        </List>
-      )}
-    </Box>
-  );
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
-      {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-          <CircularProgress />
-        </Box>
-      )}
-      
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-      
-      <Typography variant="h4" component="h1" sx={{ mb: 3 }}>
-        Dashboard Financeiro
+      <Typography variant="h4" sx={{ mb: 3, fontWeight: 'bold' }}>
+        Relatório Administrativo Financeiro
       </Typography>
-      
-      {/* Cards de Resumo */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'white' }}>
-            <AttachMoney sx={{ fontSize: 40, mb: 1 }} />
-            <Typography variant="h6">Total Receitas</Typography>
-            <Typography variant="h4">{formatarValor(totalReceitas)}</Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'error.light', color: 'white' }}>
-            <AccountBalance sx={{ fontSize: 40, mb: 1 }} />
-            <Typography variant="h6">Total Despesas</Typography>
-            <Typography variant="h4">{formatarValor(totalDespesas)}</Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ 
-            p: 2, 
-            textAlign: 'center', 
-            bgcolor: saldo >= 0 ? 'success.main' : 'error.main', 
-            color: 'white' 
-          }}>
-            <Assessment sx={{ fontSize: 40, mb: 1 }} />
-            <Typography variant="h6">Saldo</Typography>
-            <Typography variant="h4">{formatarValor(saldo)}</Typography>
-          </Paper>
-        </Grid>
-      </Grid>
       
       {/* Filtros */}
       <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>Filtros</Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={4}>
             <FormControl fullWidth>
               <InputLabel>Filtrar por Categoria</InputLabel>
-              <Select
-                value={filtroTag}
-                label="Filtrar por Categoria"
-                onChange={handleFiltroTagChange}
-              >
+              <Select value={filtroTag} onChange={handleFiltroTagChange}>
                 <MenuItem value="">Todas as categorias</MenuItem>
-                {tags.map((tag) => (
+                {tags.map(tag => (
                   <MenuItem key={tag.id} value={tag.id}>
                     <Chip 
                       label={tag.nome} 
                       size="small" 
-                      sx={{ 
-                        bgcolor: tag.cor, 
-                        color: 'white',
-                        mr: 1
-                      }} 
+                      sx={{ bgcolor: tag.cor, color: 'white' }}
                     />
-                    {tag.nome}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
             <TextField
               fullWidth
-              type="month"
               label="Filtrar por Mês"
+              type="month"
               value={filtroMes}
               onChange={handleFiltroMesChange}
               InputLabelProps={{ shrink: true }}
@@ -397,50 +424,132 @@ export default function Transacoes() {
         </Grid>
       </Paper>
       
-      {/* Estatísticas por Categoria */}
-      {estatisticasPorTag().length > 0 && (
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>Estatísticas por Categoria</Typography>
-          <Grid container spacing={2}>
-            {estatisticasPorTag().map((stat) => (
-              <Grid item xs={12} md={6} lg={4} key={stat.nome}>
-                <Paper sx={{ p: 2, border: `2px solid ${stat.cor}` }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-                    {stat.nome}
-                  </Typography>
-                  <Typography variant="body2" color="success.main">
-                    Receitas: {formatarValor(stat.receitas)}
-                  </Typography>
-                  <Typography variant="body2" color="error.main">
-                    Despesas: {formatarValor(stat.despesas)}
-                  </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                    Saldo: {formatarValor(stat.receitas - stat.despesas)}
-                  </Typography>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
-        </Paper>
-      )}
-      
-      {/* Tabs de Transações */}
-      <Paper sx={{ p: 2 }}>
-        <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3 }}>
-          <Tab label="Receitas" />
-          <Tab label="Despesas" />
-        </Tabs>
+      {/* Cards de Resumo */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 2, bgcolor: 'success.light', color: 'success.contrastText' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box>
+                <Typography variant="h6">Receitas</Typography>
+                <Typography variant="h4">{formatarValor(totalReceitas)}</Typography>
+                <Typography variant="body2">{receitasFiltradas.length} transações</Typography>
+              </Box>
+              <AttachMoney sx={{ fontSize: 48, opacity: 0.7 }} />
+            </Box>
+          </Paper>
+        </Grid>
         
-        {tabValue === 0 && renderReceitas()}
-        {tabValue === 1 && renderDespesas()}
-      </Paper>
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 2, bgcolor: 'error.light', color: 'error.contrastText' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box>
+                <Typography variant="h6">Despesas</Typography>
+                <Typography variant="h4">{formatarValor(totalDespesas)}</Typography>
+                <Typography variant="body2">{despesasFiltradas.length} transações</Typography>
+              </Box>
+              <TrendingDown sx={{ fontSize: 48, opacity: 0.7 }} />
+            </Box>
+          </Paper>
+        </Grid>
+        
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ 
+            p: 2, 
+            bgcolor: saldo >= 0 ? 'success.light' : 'error.light',
+            color: saldo >= 0 ? 'success.contrastText' : 'error.contrastText'
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box>
+                <Typography variant="h6">Saldo</Typography>
+                <Typography variant="h4">{formatarValor(saldo)}</Typography>
+                <Typography variant="body2">{saldo >= 0 ? 'Superávit' : 'Déficit'}</Typography>
+              </Box>
+              <AccountBalance sx={{ fontSize: 48, opacity: 0.7 }} />
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
       
-      {/* Modal de Cadastro */}
-      <CadastroTransacaoModal
-        open={modalOpen}
-        onClose={fecharModal}
-        tipo={modalType}
-      />
+      {/* Métricas de Performance */}
+      {renderMetricasPerformance()}
+      
+      {/* Evolução Mensal */}
+      {renderEvolucaoMensal()}
+      
+      {/* Top Categorias */}
+      {renderTopCategorias()}
+      
+      {/* Estatísticas Detalhadas por Categoria */}
+      {estatisticasPorTag().length > 0 && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography variant="h6" sx={{ mb: 2 }}>Análise Detalhada por Categoria</Typography>
+            <Grid container spacing={2}>
+              {getPercentualPorCategoria().map((stat) => (
+                <Grid item xs={12} md={6} lg={4} key={stat.nome}>
+                  <Paper sx={{ p: 2, border: `2px solid ${stat.cor}`, position: 'relative' }}>
+                    <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+                      <Typography variant="caption" sx={{ 
+                        bgcolor: stat.cor, 
+                        color: 'white', 
+                        px: 1, 
+                        py: 0.5, 
+                        borderRadius: 1 
+                      }}>
+                        {stat.percentual.toFixed(1)}%
+                      </Typography>
+                    </Box>
+                    
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2, pr: 4 }}>
+                      {stat.nome}
+                    </Typography>
+                    
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" sx={{ color: 'success.main', mb: 0.5 }}>
+                        Receitas: {formatarValor(stat.receitas)}
+                      </Typography>
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={stat.receitas > 0 ? (stat.receitas / (stat.receitas + stat.despesas)) * 100 : 0}
+                        sx={{ 
+                          height: 4, 
+                          bgcolor: 'grey.200',
+                          '& .MuiLinearProgress-bar': { bgcolor: 'success.main' }
+                        }} 
+                      />
+                    </Box>
+                    
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" sx={{ color: 'error.main', mb: 0.5 }}>
+                        Despesas: {formatarValor(stat.despesas)}
+                      </Typography>
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={stat.despesas > 0 ? (stat.despesas / (stat.receitas + stat.despesas)) * 100 : 0}
+                        sx={{ 
+                          height: 4, 
+                          bgcolor: 'grey.200',
+                          '& .MuiLinearProgress-bar': { bgcolor: 'error.main' }
+                        }} 
+                      />
+                    </Box>
+                    
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        fontWeight: 'bold',
+                        color: (stat.receitas - stat.despesas) >= 0 ? 'success.main' : 'error.main'
+                      }}
+                    >
+                      Saldo: {formatarValor(stat.receitas - stat.despesas)}
+                    </Typography>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          </CardContent>
+        </Card>
+      )}
     </Box>
   );
 }
