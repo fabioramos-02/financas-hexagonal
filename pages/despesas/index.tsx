@@ -39,6 +39,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import CategorySelector from '../../src/ui/components/CategorySelector';
+import ConfirmDeleteModal from '../../src/ui/components/ConfirmDeleteModal';
 
 interface Tag {
   id: string;
@@ -78,6 +79,9 @@ export default function Despesas() {
     message: '',
     severity: 'success'
   });
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [despesaToDelete, setDespesaToDelete] = useState<{ id: string; descricao: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     carregarDados();
@@ -96,10 +100,10 @@ export default function Despesas() {
       }
 
       const despesasData = await despesasResponse.json();
-      const tagsData = await tagsResponse.json();
+      const tagsResponse_json = await tagsResponse.json();
 
       setDespesas(despesasData);
-      setTags(tagsData);
+      setTags(tagsResponse_json.tags || []);
       setError(null);
     } catch (err) {
       setError('Erro ao carregar dados');

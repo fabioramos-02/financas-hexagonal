@@ -38,6 +38,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import CategorySelector from '../../src/ui/components/CategorySelector';
+import ConfirmDeleteModal from '../../src/ui/components/ConfirmDeleteModal';
 
 interface Tag {
   id: string;
@@ -77,6 +78,9 @@ export default function Entradas() {
     message: '',
     severity: 'success'
   });
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [entradaToDelete, setEntradaToDelete] = useState<{ id: string; descricao: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     carregarDados();
@@ -95,10 +99,10 @@ export default function Entradas() {
       }
 
       const entradasData = await entradasResponse.json();
-      const tagsData = await tagsResponse.json();
+      const tagsResponse_json = await tagsResponse.json();
 
       setEntradas(entradasData);
-      setTags(tagsData);
+      setTags(tagsResponse_json.tags || []);
       setError(null);
     } catch (err) {
       setError('Erro ao carregar dados');
@@ -199,13 +203,22 @@ export default function Entradas() {
     }
   };
 
-  const excluirEntrada = async (id: string, descricao: string) => {
-    if (!confirm(`Tem certeza que deseja excluir a entrada "${descricao}"?`)) {
-      return;
-    }
+  const abrirModalExclusao = (id: string, descricao: string) => {
+    setEntradaToDelete({ id, descricao });
+    setDeleteModalOpen(true);
+  };
+
+  const fecharModalExclusao = () => {
+    setDeleteModalOpen(false);
+    setEntradaToDelete(null);
+  };
+
+  const confirmarExclusao = async () => {
+    if (!entradaToDelete) return;
 
     try {
-      const response = await fetch(`/api/entradas/${id}`, {
+      setDeleting(true);
+      const response = await fetch(`/api/entradas/${entradaToDelete.id}`, {
         method: 'DELETE',
       });
 
@@ -216,15 +229,18 @@ export default function Entradas() {
       await carregarDados();
       setFeedback({
         open: true,
-        message: `Entrada "${descricao}" excluída com sucesso!`,
+        message: `Entrada "${entradaToDelete.descricao}" excluída com sucesso!`,
         severity: 'success'
       });
+      fecharModalExclusao();
     } catch (err: any) {
       setFeedback({
         open: true,
         message: err.message || 'Erro ao excluir entrada',
         severity: 'error'
       });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -343,7 +359,7 @@ export default function Entradas() {
                       <Tooltip title="Excluir">
                         <IconButton
                           size="small"
-                          onClick={() => excluirEntrada(entrada.id, entrada.descricao)}
+                          onClick={() => abrirModalExclusao(entrada.id, entrada.descricao)}
                           color="error"
                         >
                           <DeleteIcon fontSize="small" />
@@ -457,6 +473,16 @@ export default function Entradas() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Modal de Confirmação de Exclusão */}
+      <ConfirmDeleteModal
+        open={deleteModalOpen}
+        onClose={fecharModalExclusao}
+        onConfirm={confirmarExclusao}
+        itemType="entrada"
+        itemName={entradaToDelete?.descricao}
+        loading={deleting}
+      />
 
       <Snackbar
         open={feedback.open}

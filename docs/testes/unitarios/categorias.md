@@ -6,11 +6,16 @@ Durante a análise da implementação dos ícones das categorias na página `pag
 
 ### Problemas Identificados:
 
-1. **Ausência de Testes Unitários para Ícones**: Não foram encontrados testes específicos para validar a renderização correta dos ícones das categorias.
+1. **Erro crítico: TypeError: tags.map is not a function**
+   - **RESOLVIDO**: As páginas de despesas e entradas estavam tentando usar a resposta da API `/api/tags` diretamente como array
+   - A API retorna um objeto `{ tags: [...] }`, mas o código esperava um array diretamente
+   - Corrigido em: `pages/despesas/index.tsx`, `pages/entradas/index.tsx`, `pages/transacoes/index.tsx`
 
-2. **Interferência entre Testes**: Os testes existentes em `CadastroTransacaoModal.test.tsx` apresentam problemas de interferência entre execuções, onde elementos do DOM não são encontrados quando todos os testes são executados juntos.
+2. **Ausência de Testes Unitários para Ícones**: Não foram encontrados testes específicos para validar a renderização correta dos ícones das categorias.
 
-3. **Falta de Validação de Fallback**: Não há testes que validem se o ícone padrão (`Category`) é exibido quando um ícone inválido é fornecido.
+3. **Interferência entre Testes**: Os testes existentes em `CadastroTransacaoModal.test.tsx` apresentam problemas de interferência entre execuções, onde elementos do DOM não são encontrados quando todos os testes são executados juntos.
+
+4. **Falta de Validação de Fallback**: Não há testes que validem se o ícone padrão (`Category`) é exibido quando um ícone inválido é fornecido.
 
 ## Passos para Reprodução
 

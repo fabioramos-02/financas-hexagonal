@@ -85,7 +85,7 @@ export default function Transacoes() {
       const response = await fetch('/api/tags');
       if (response.ok) {
         const data = await response.json();
-        setTags(data);
+        setTags(data.tags || []);
       }
     } catch (err) {
       console.error('Erro ao carregar tags:', err);

@@ -28,6 +28,7 @@ import {
 } from '@mui/material';
 import { Add, Edit, Delete, Palette, Category, CheckCircle } from '@mui/icons-material';
 import IconSelector, { getIconByName } from '../../src/ui/components/IconSelector';
+import ConfirmDeleteModal from '../../src/ui/components/ConfirmDeleteModal';
 
 interface Tag {
   id: string;
@@ -66,12 +67,16 @@ export default function Categorias() {
   const [cor, setCor] = useState(coresPredefinidas[0]);
   const [icone, setIcone] = useState('Category');
   const [salvando, setSalvando] = useState(false);
-  const [excluindo, setExcluindo] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{
     open: boolean;
     message: string;
     severity: 'success' | 'error' | 'info' | 'warning';
   }>({ open: false, message: '', severity: 'success' });
+  
+  // Estados para o modal de exclusão
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [tagToDelete, setTagToDelete] = useState<{ id: string; nome: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     carregarTags();
@@ -202,14 +207,27 @@ export default function Categorias() {
     }
   };
 
-  const excluirTag = async (tagId: string, tagNome: string) => {
-    if (!confirm(`Tem certeza que deseja excluir a categoria "${tagNome}"?`)) {
-      return;
+  // Função para abrir o modal de exclusão
+  const abrirModalExclusao = (tagId: string, tagNome: string) => {
+    setTagToDelete({ id: tagId, nome: tagNome });
+    setDeleteModalOpen(true);
+  };
+
+  // Função para fechar o modal de exclusão
+  const fecharModalExclusao = () => {
+    if (!deleting) {
+      setDeleteModalOpen(false);
+      setTagToDelete(null);
     }
+  };
+
+  // Função para confirmar a exclusão
+  const confirmarExclusao = async () => {
+    if (!tagToDelete) return;
 
     try {
-      setExcluindo(tagId);
-      const response = await fetch(`/api/tags/${tagId}`, {
+      setDeleting(true);
+      const response = await fetch(`/api/tags/${tagToDelete.id}`, {
         method: 'DELETE',
       });
 
@@ -217,9 +235,10 @@ export default function Categorias() {
         await carregarTags();
         setFeedback({
           open: true,
-          message: `Categoria "${tagNome}" excluída com sucesso!`,
+          message: `Categoria "${tagToDelete.nome}" excluída com sucesso!`,
           severity: 'success'
         });
+        fecharModalExclusao();
       } else {
         const data = await response.json();
         const errorMessage = data.erro || 'Erro ao excluir categoria';
@@ -240,7 +259,7 @@ export default function Categorias() {
         severity: 'error'
       });
     } finally {
-      setExcluindo(null);
+      setDeleting(false);
     }
   };
 
@@ -389,8 +408,8 @@ export default function Categorias() {
                         </Tooltip>
                         <Tooltip title="Excluir categoria" arrow>
                           <IconButton 
-                            onClick={() => excluirTag(tag.id, tag.nome)} 
-                            disabled={excluindo === tag.id}
+                            onClick={() => abrirModalExclusao(tag.id, tag.nome)} 
+                            disabled={deleting}
                             size="small" 
                             sx={{ 
                               color: 'error.main',
@@ -400,7 +419,7 @@ export default function Categorias() {
                               }
                             }}
                           >
-                            {excluindo === tag.id ? (
+                            {deleting ? (
                               <CircularProgress size={16} color="error" />
                             ) : (
                               <Delete fontSize="small" />
@@ -449,7 +468,7 @@ export default function Categorias() {
           >
             {editingTag ? <Edit /> : <Add />}
           </Avatar>
-          <Typography variant="h6" component="div">
+          <Typography variant="h6" component="span">
             {editingTag ? 'Editar Categoria' : 'Nova Categoria'}
           </Typography>
         </DialogTitle>
@@ -658,6 +677,16 @@ export default function Categorias() {
           </Button>
         </DialogActions>
       </Dialog>
+      
+      {/* Modal de Confirmação de Exclusão */}
+      <ConfirmDeleteModal
+        open={deleteModalOpen}
+        onClose={fecharModalExclusao}
+        onConfirm={confirmarExclusao}
+        itemType="categoria"
+        itemName={tagToDelete?.nome}
+        loading={deleting}
+      />
       
       {/* Feedback Snackbar */}
       <Snackbar
