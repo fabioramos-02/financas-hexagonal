@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -8,6 +8,8 @@ import {
   InputAdornment,
   Paper,
   Chip,
+  Tooltip,
+  Avatar,
 } from '@mui/material';
 import {
   Search,
@@ -20,7 +22,6 @@ import {
   DirectionsCar,
   School,
   LocalHospital,
-  SportsEsports,
   Movie,
   FitnessCenter,
   Pets,
@@ -37,7 +38,7 @@ import {
   Coffee,
   Fastfood,
   LocalBar,
-  IceCream,
+  Icecream,
   Cake,
   // Ícones de trabalho e renda
   Work,
@@ -66,7 +67,7 @@ import {
   TheaterComedy,
   MusicNote,
   LibraryBooks,
-  Videogame,
+  SportsEsports,
   SportsBaseball,
   Pool,
 } from '@mui/icons-material';
@@ -92,7 +93,7 @@ const iconOptions: IconOption[] = [
   { name: 'Fastfood', icon: <Fastfood />, keywords: ['fast food', 'lanche', 'hambúrguer'] },
   { name: 'Coffee', icon: <Coffee />, keywords: ['café', 'bebida', 'cafeteria'] },
   { name: 'LocalBar', icon: <LocalBar />, keywords: ['bar', 'bebida', 'álcool'] },
-  { name: 'IceCream', icon: <IceCream />, keywords: ['sorvete', 'doce', 'sobremesa'] },
+  { name: 'Icecream', icon: <Icecream />, keywords: ['sorvete', 'doce', 'sobremesa'] },
   { name: 'Cake', icon: <Cake />, keywords: ['bolo', 'doce', 'festa', 'aniversário'] },
   { name: 'MenuBook', icon: <MenuBook />, keywords: ['cardápio', 'menu', 'restaurante'] },
   
@@ -129,8 +130,7 @@ const iconOptions: IconOption[] = [
   { name: 'Movie', icon: <Movie />, keywords: ['filme', 'cinema', 'entretenimento'] },
   { name: 'TheaterComedy', icon: <TheaterComedy />, keywords: ['teatro', 'comédia', 'show'] },
   { name: 'MusicNote', icon: <MusicNote />, keywords: ['música', 'som', 'áudio'] },
-  { name: 'SportsEsports', icon: <SportsEsports />, keywords: ['jogos', 'games', 'videogame'] },
-  { name: 'Videogame', icon: <Videogame />, keywords: ['videogame', 'console', 'jogos'] },
+  { name: 'SportsEsports', icon: <SportsEsports />, keywords: ['videogame', 'console', 'jogos', 'esports', 'games'] },
   { name: 'SportsBaseball', icon: <SportsBaseball />, keywords: ['esporte', 'baseball', 'atividade'] },
   { name: 'FitnessCenter', icon: <FitnessCenter />, keywords: ['academia', 'fitness', 'exercício'] },
   { name: 'Pool', icon: <Pool />, keywords: ['piscina', 'natação', 'esporte'] },
@@ -171,50 +171,78 @@ export default function IconSelector({ selectedIcon, onIconSelect }: IconSelecto
 
   return (
     <Box>
-      <Typography variant="subtitle1" sx={{ mb: 2 }}>
-        Escolha um ícone:
+      <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Category color="primary" />
+        Escolha um Ícone
       </Typography>
       
       <TextField
         fullWidth
-        placeholder="Buscar ícone..."
+        label="Buscar ícone por nome ou categoria"
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
+        sx={{ mb: 3 }}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <Search />
+              <Search color="action" />
             </InputAdornment>
           ),
+          sx: { borderRadius: 2 }
         }}
-        sx={{ mb: 2 }}
-        size="small"
+        placeholder="Ex: casa, comida, transporte..."
       />
       
       {selectedIcon && (
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1.5, color: 'text.secondary' }}>
             Ícone selecionado:
           </Typography>
-          <Chip
-            icon={getIconByName(selectedIcon)}
-            label={selectedIcon}
-            color="primary"
-            variant="outlined"
-          />
+          <Paper 
+            sx={{ 
+              p: 2, 
+              borderRadius: 2, 
+              bgcolor: 'primary.50',
+              border: '1px solid',
+              borderColor: 'primary.200',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 1.5
+            }}
+          >
+            <Box 
+              sx={{ 
+                bgcolor: 'primary.main',
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white'
+              }}
+            >
+              {getIconByName(selectedIcon)}
+            </Box>
+            <Typography variant="body2" sx={{ fontWeight: 500, color: 'primary.main' }}>
+              {selectedIcon}
+            </Typography>
+          </Paper>
         </Box>
       )}
       
       <Paper 
         sx={{ 
-          maxHeight: 300, 
+          maxHeight: 320, 
           overflow: 'auto', 
-          p: 1,
+          p: 2.5,
+          borderRadius: 2,
+          bgcolor: 'grey.50',
           border: '1px solid',
-          borderColor: 'divider'
+          borderColor: 'grey.200'
         }}
       >
-        <Grid container spacing={1}>
+        <Grid container spacing={1.5}>
           {filteredIcons.map((option) => (
             <Grid item key={option.name}>
               <IconButton
@@ -222,12 +250,17 @@ export default function IconSelector({ selectedIcon, onIconSelect }: IconSelecto
                 sx={{
                   width: 48,
                   height: 48,
-                  border: selectedIcon === option.name ? '2px solid' : '1px solid',
-                  borderColor: selectedIcon === option.name ? 'primary.main' : 'divider',
-                  bgcolor: selectedIcon === option.name ? 'primary.light' : 'transparent',
+                  border: selectedIcon === option.name ? '3px solid' : '2px solid',
+                  borderColor: selectedIcon === option.name ? 'primary.main' : 'transparent',
+                  bgcolor: selectedIcon === option.name ? 'primary.50' : 'white',
+                  color: selectedIcon === option.name ? 'primary.main' : 'text.secondary',
+                  boxShadow: selectedIcon === option.name ? 2 : 1,
+                  transition: 'all 0.2s ease-in-out',
                   '&:hover': {
-                    bgcolor: 'primary.light',
-                    borderColor: 'primary.main',
+                    bgcolor: selectedIcon === option.name ? 'primary.100' : 'grey.100',
+                    transform: 'scale(1.05)',
+                    boxShadow: 3,
+                    borderColor: selectedIcon === option.name ? 'primary.main' : 'primary.200',
                   },
                 }}
                 title={`${option.name} - ${option.keywords.join(', ')}`}
@@ -239,9 +272,13 @@ export default function IconSelector({ selectedIcon, onIconSelect }: IconSelecto
         </Grid>
         
         {filteredIcons.length === 0 && (
-          <Box sx={{ textAlign: 'center', py: 3 }}>
-            <Typography variant="body2" color="text.secondary">
-              Nenhum ícone encontrado para &quot;{searchTerm}&quot;
+          <Box sx={{ textAlign: 'center', py: 6 }}>
+            <Search sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+              Nenhum ícone encontrado
+            </Typography>
+            <Typography variant="body2" color="text.disabled">
+              Tente buscar por "{searchTerm}" ou use termos como "casa", "comida", "transporte"
             </Typography>
           </Box>
         )}

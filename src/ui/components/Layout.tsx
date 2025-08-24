@@ -24,6 +24,9 @@ import {
   Person,
   Notifications,
   Home,
+  TrendingUp,
+  TrendingDown,
+  Assessment,
 } from '@mui/icons-material';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -42,8 +45,10 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { text: 'Dashboard', icon: <Home />, path: '/' },
-  { text: 'Transações', icon: <Dashboard />, path: '/transacoes' },
+  { text: 'Entradas', icon: <TrendingUp />, path: '/entradas' },
+  { text: 'Despesas', icon: <TrendingDown />, path: '/despesas' },
   { text: 'Categorias', icon: <Category />, path: '/categorias' },
+  { text: 'Relatórios', icon: <Assessment />, path: '/transacoes' },
 ];
 
 export default function Layout({ children }: LayoutProps) {
@@ -99,16 +104,6 @@ export default function Layout({ children }: LayoutProps) {
             </Link>
           );
         })}
-        <Link href="/categorias" passHref style={{ textDecoration: 'none', color: 'inherit' }}>
-          <ListItem disablePadding>
-            <ListItemButton>
-              <ListItemIcon>
-                <Category />
-              </ListItemIcon>
-              <ListItemText primary="Categorias" />
-            </ListItemButton>
-          </ListItem>
-        </Link>
       </List>
     </div>
   );
