@@ -129,21 +129,25 @@ export default function Transacoes() {
     const stats: { [key: string]: { nome: string; cor: string; receitas: number; despesas: number } } = {};
     
     receitasFiltradas.forEach(receita => {
-      receita.tags.forEach(tag => {
-        if (!stats[tag.id]) {
-          stats[tag.id] = { nome: tag.nome, cor: tag.cor, receitas: 0, despesas: 0 };
-        }
-        stats[tag.id].receitas += receita.valor;
-      });
+      if (receita.tags) {
+        receita.tags.forEach(tag => {
+           if (!stats[tag.id]) {
+             stats[tag.id] = { nome: tag.nome, cor: tag.cor, receitas: 0, despesas: 0 };
+           }
+           stats[tag.id]!.receitas += receita.valor;
+         });
+      }
     });
     
     despesasFiltradas.forEach(despesa => {
-      despesa.tags.forEach(tag => {
-        if (!stats[tag.id]) {
-          stats[tag.id] = { nome: tag.nome, cor: tag.cor, receitas: 0, despesas: 0 };
-        }
-        stats[tag.id].despesas += despesa.valor;
-      });
+      if (despesa.tags) {
+        despesa.tags.forEach(tag => {
+           if (!stats[tag.id]) {
+             stats[tag.id] = { nome: tag.nome, cor: tag.cor, receitas: 0, despesas: 0 };
+           }
+           stats[tag.id]!.despesas += despesa.valor;
+         });
+      }
     });
     
     return Object.values(stats);

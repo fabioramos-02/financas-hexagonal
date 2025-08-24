@@ -1,6 +1,7 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import '@testing-library/jest-dom';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { ptBR } from 'date-fns/locale';
@@ -38,6 +39,10 @@ describe('CadastroTransacaoModal', () => {
       ok: true,
       json: async () => ({ tags: mockTags })
     });
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it('deve renderizar o modal quando aberto', async () => {

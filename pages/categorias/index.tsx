@@ -589,13 +589,13 @@ export default function Categorias() {
                     
                     <Chip
                       size="small"
-                      label={cor.toUpperCase()}
+                      label={cor ? cor.toUpperCase() : ''}
                       sx={{ 
-                        backgroundColor: cor + '20',
-                        color: cor,
+                        backgroundColor: cor ? cor + '20' : 'transparent',
+                        color: cor || 'inherit',
                         fontWeight: 600,
                         fontSize: '0.75rem',
-                        border: `1px solid ${cor}30`
+                        border: `1px solid ${cor || 'transparent'}30`
                       }}
                     />
                   </CardContent>

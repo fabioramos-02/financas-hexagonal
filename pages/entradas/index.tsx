@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
+  Container,
   Box,
   Typography,
   Button,
@@ -36,8 +37,7 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import Layout from '../../src/ui/components/Layout';
-import { getIconByName } from '../../src/ui/components/IconSelector';
+import CategorySelector from '../../src/ui/components/CategorySelector';
 
 interface Tag {
   id: string;
@@ -65,16 +65,18 @@ export default function Entradas() {
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingEntrada, setEditingEntrada] = useState<Entrada | null>(null);
-  const [feedback, setFeedback] = useState<Feedback>({ open: false, message: '', severity: 'success' });
-  
-  // Estados do formulário
+  const [modalAberto, setModalAberto] = useState(false);
+  const [entradaEditando, setEntradaEditando] = useState<Entrada | null>(null);
   const [descricao, setDescricao] = useState('');
   const [valor, setValor] = useState('');
   const [data, setData] = useState('');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagsSelecionadas, setTagsSelecionadas] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<Feedback>({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   useEffect(() => {
     carregarDados();
@@ -84,7 +86,7 @@ export default function Entradas() {
     try {
       setLoading(true);
       const [entradasResponse, tagsResponse] = await Promise.all([
-        fetch('/api/receitas'),
+        fetch('/api/entradas'),
         fetch('/api/tags')
       ]);
 
@@ -95,12 +97,11 @@ export default function Entradas() {
       const entradasData = await entradasResponse.json();
       const tagsData = await tagsResponse.json();
 
-      setEntradas(entradasData.receitas || []);
-      setTags(tagsData.tags || []);
+      setEntradas(entradasData);
+      setTags(tagsData);
       setError(null);
     } catch (err) {
-      setError('Erro ao carregar dados. Tente novamente.');
-      console.error('Erro ao carregar dados:', err);
+      setError('Erro ao carregar dados');
     } finally {
       setLoading(false);
     }
@@ -108,28 +109,29 @@ export default function Entradas() {
 
   const abrirModal = (entrada?: Entrada) => {
     if (entrada) {
-      setEditingEntrada(entrada);
+      setEntradaEditando(entrada);
       setDescricao(entrada.descricao);
       setValor(entrada.valor.toString());
-      setData(entrada.data.split('T')[0]);
-      setSelectedTags(entrada.tags.map(tag => tag.id));
+      const dataFormatada = entrada.data ? new Date(entrada.data).toISOString().split('T')[0] : '';
+       setData(dataFormatada ?? '');
+      setTagsSelecionadas(entrada.tags ? entrada.tags.map(tag => tag.id) : []);
     } else {
-      setEditingEntrada(null);
+      setEntradaEditando(null);
       setDescricao('');
       setValor('');
       setData('');
-      setSelectedTags([]);
+      setTagsSelecionadas([]);
     }
-    setModalOpen(true);
+    setModalAberto(true);
   };
 
   const fecharModal = () => {
-    setModalOpen(false);
-    setEditingEntrada(null);
+    setModalAberto(false);
+    setEntradaEditando(null);
     setDescricao('');
     setValor('');
     setData('');
-    setSelectedTags([]);
+    setTagsSelecionadas([]);
   };
 
   const salvarEntrada = async () => {
@@ -137,7 +139,7 @@ export default function Entradas() {
       setFeedback({
         open: true,
         message: 'Descrição é obrigatória',
-        severity: 'warning'
+        severity: 'error'
       });
       return;
     }
@@ -146,7 +148,7 @@ export default function Entradas() {
       setFeedback({
         open: true,
         message: 'Valor deve ser maior que zero',
-        severity: 'warning'
+        severity: 'error'
       });
       return;
     }
@@ -155,36 +157,35 @@ export default function Entradas() {
       setFeedback({
         open: true,
         message: 'Data é obrigatória',
-        severity: 'warning'
+        severity: 'error'
       });
       return;
     }
 
     try {
       setSubmitting(true);
-      const response = await fetch('/api/receitas', {
+      const response = await fetch('/api/entradas', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          descricao: descricao.trim(),
+          descricao,
           valor: parseFloat(valor),
-          data: data,
-          tagIds: selectedTags
+          data,
+          tagIds: tagsSelecionadas
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.erro || 'Erro ao salvar entrada');
+        throw new Error('Erro ao salvar entrada');
       }
 
       await carregarDados();
       fecharModal();
       setFeedback({
         open: true,
-        message: editingEntrada ? 'Entrada atualizada com sucesso!' : 'Entrada criada com sucesso!',
+        message: 'Entrada salva com sucesso!',
         severity: 'success'
       });
     } catch (err: any) {
@@ -204,7 +205,7 @@ export default function Entradas() {
     }
 
     try {
-      const response = await fetch(`/api/receitas/${id}`, {
+      const response = await fetch(`/api/entradas/${id}`, {
         method: 'DELETE',
       });
 
@@ -240,335 +241,237 @@ export default function Entradas() {
 
   if (loading) {
     return (
-      <Layout>
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
           <CircularProgress size={60} />
         </Box>
-      </Layout>
+      </Container>
     );
   }
 
   return (
-    <Layout>
-      <Box sx={{ p: 3 }}>
-        {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar sx={{ bgcolor: 'success.main' }}>
-              <TrendingUp />
-            </Avatar>
-            <Box>
-              <Typography variant="h4" component="h1" fontWeight="bold">
-                Entradas
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Gerencie suas receitas e ganhos
-              </Typography>
-            </Box>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box>
+            <Typography variant="h4" component="h1" gutterBottom>
+              Entradas
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Gerencie suas receitas e categorias
+            </Typography>
           </Box>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => abrirModal()}
             size="large"
-            sx={{ borderRadius: 2 }}
           >
             Nova Entrada
           </Button>
         </Box>
+        <Divider />
+      </Box>
 
-        {/* Error Alert */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
-        {/* Empty State */}
-        {entradas.length === 0 && !loading && (
-          <Paper sx={{ p: 6, textAlign: 'center', bgcolor: 'grey.50' }}>
-            <TrendingUp sx={{ fontSize: 80, color: 'grey.400', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              Nenhuma entrada encontrada
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Comece criando sua primeira entrada de receita
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => abrirModal()}
-            >
-              Criar Primeira Entrada
-            </Button>
-          </Paper>
-        )}
+      {entradas.length === 0 && !loading && (
+        <Paper
+          sx={{
+            p: 6,
+            textAlign: 'center',
+            bgcolor: 'grey.50'
+          }}
+        >
+          <TrendingUp sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
+          <Typography variant="h6" gutterBottom>
+            Nenhuma entrada encontrada
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Comece adicionando sua primeira entrada
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => abrirModal()}
+          >
+            Adicionar Entrada
+          </Button>
+        </Paper>
+      )}
 
-        {/* Entradas Grid */}
-        {entradas.length > 0 && (
-          <Grid container spacing={3}>
-            {entradas.map((entrada) => (
-              <Grid item xs={12} sm={6} lg={4} key={entrada.id}>
-                <Card
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    transition: 'all 0.3s ease',
-                    borderRadius: 2,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: 4,
-                      borderColor: 'success.main',
-                    },
-                  }}
-                >
-                  <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                    {/* Header do Card */}
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                        <Typography 
-                          variant="h6" 
-                          component="h3" 
-                          fontWeight="bold" 
-                          sx={{ 
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            mb: 1
-                          }}
-                        >
-                          {entrada.descricao}
-                        </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <CalendarToday sx={{ fontSize: 16, color: 'text.secondary' }} />
-                          <Typography variant="body2" color="text.secondary">
-                            {formatarData(entrada.data)}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Box sx={{ display: 'flex', gap: 0.5, ml: 1 }}>
-                        <Tooltip title="Editar entrada">
-                          <IconButton
-                            size="small"
-                            onClick={() => abrirModal(entrada)}
-                            sx={{ color: 'primary.main' }}
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Excluir entrada">
-                          <IconButton
-                            size="small"
-                            onClick={() => excluirEntrada(entrada.id, entrada.descricao)}
-                            sx={{ color: 'error.main' }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </Box>
-
-                    {/* Valor */}
-                    <Box sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 1, 
-                      mb: 2,
-                      p: 2,
-                      bgcolor: 'success.50',
-                      borderRadius: 1,
-                      border: '1px solid',
-                      borderColor: 'success.200'
-                    }}>
-                      <AttachMoney sx={{ color: 'success.main' }} />
-                      <Typography variant="h5" fontWeight="bold" color="success.main">
+      {entradas.length > 0 && (
+        <Grid container spacing={3}>
+          {entradas.map((entrada) => (
+            <Grid item xs={12} sm={6} md={4} key={entrada.id}>
+              <Card
+                sx={{
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: 4
+                  }
+                }}
+              >
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Typography variant="h6" component="h2" gutterBottom>
+                        {entrada.descricao}
+                      </Typography>
+                      <Typography variant="h5" color="success.main" fontWeight="bold">
                         {formatarValor(entrada.valor)}
                       </Typography>
                     </Box>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Tooltip title="Editar">
+                        <IconButton
+                          size="small"
+                          onClick={() => abrirModal(entrada)}
+                          color="primary"
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Excluir">
+                        <IconButton
+                          size="small"
+                          onClick={() => excluirEntrada(entrada.id, entrada.descricao)}
+                          color="error"
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </Box>
 
-                    {/* Tags */}
-                    {entrada.tags.length > 0 && (
-                      <Box sx={{ mt: 2 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          Categorias:
-                        </Typography>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                          {entrada.tags.map((tag) => (
-                            <Chip
-                              key={tag.id}
-                              label={tag.nome}
-                              size="small"
-                              icon={tag.icone ? getIconByName(tag.icone) : undefined}
-                              sx={{
-                                backgroundColor: tag.cor + '20',
-                                color: tag.cor,
-                                border: `1px solid ${tag.cor}40`,
-                                '& .MuiChip-icon': {
-                                  color: tag.cor,
-                                },
-                              }}
-                            />
-                          ))}
-                        </Box>
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        )}
+                  <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    mb: 2,
+                    color: 'text.secondary'
+                  }}>
+                    <CalendarToday fontSize="small" />
+                    <Typography variant="body2">
+                      {formatarData(entrada.data)}
+                    </Typography>
+                  </Box>
 
-        {/* Modal de Criação/Edição */}
-        <Dialog
-          open={modalOpen}
-          onClose={fecharModal}
-          maxWidth="md"
-          fullWidth
-          PaperProps={{
-            sx: { borderRadius: 2 }
-          }}
-        >
-          <DialogTitle sx={{ pb: 1 }}>
-            <Typography variant="h5" fontWeight="bold">
-              {editingEntrada ? 'Editar Entrada' : 'Nova Entrada'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {editingEntrada ? 'Atualize os dados da entrada' : 'Preencha os dados da nova entrada'}
-            </Typography>
-          </DialogTitle>
-          
-          <DialogContent sx={{ pt: 2 }}>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <TextField
-                  label="Descrição"
-                  value={descricao}
-                  onChange={(e) => setDescricao(e.target.value)}
-                  fullWidth
-                  required
-                  placeholder="Ex: Salário, Freelance, Venda..."
-                />
-              </Grid>
-              
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Valor"
-                  type="number"
-                  value={valor}
-                  onChange={(e) => setValor(e.target.value)}
-                  fullWidth
-                  required
-                  InputProps={{
-                    startAdornment: <Typography sx={{ mr: 1 }}>R$</Typography>,
-                  }}
-                  placeholder="0,00"
-                />
-              </Grid>
-              
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Data"
-                  type="date"
-                  value={data}
-                  onChange={(e) => setData(e.target.value)}
-                  fullWidth
-                  required
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                />
-              </Grid>
-              
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Categorias</InputLabel>
-                  <Select
-                    multiple
-                    value={selectedTags}
-                    onChange={(e) => setSelectedTags(e.target.value as string[])}
-                    renderValue={(selected) => (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {selected.map((tagId) => {
-                          const tag = tags.find(t => t.id === tagId);
-                          return tag ? (
-                            <Chip
-                              key={tagId}
-                              label={tag.nome}
-                              size="small"
-                              icon={tag.icone ? getIconByName(tag.icone) : undefined}
-                              sx={{
-                                backgroundColor: tag.cor + '20',
-                                color: tag.cor,
-                                '& .MuiChip-icon': {
-                                  color: tag.cor,
-                                },
-                              }}
-                            />
-                          ) : null;
-                        })}
-                      </Box>
-                    )}
-                  >
-                    {tags.map((tag) => (
-                      <MenuItem key={tag.id} value={tag.id}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          {tag.icone && getIconByName(tag.icone)}
-                          <Typography>{tag.nome}</Typography>
-                          <Box
+                  {entrada.tags.length > 0 && (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {entrada.tags.map((tag) => {
+                          return (
+                          <Chip
+                            key={tag.id}
+                            label={tag.nome}
+                            size="small"
                             sx={{
-                              width: 16,
-                              height: 16,
-                              borderRadius: '50%',
                               backgroundColor: tag.cor,
-                              ml: 'auto'
+                              color: 'white'
                             }}
                           />
-                        </Box>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
+                        );
+                      })}
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
             </Grid>
-          </DialogContent>
-          
-          <DialogActions sx={{ p: 3, pt: 1 }}>
-            <Button onClick={fecharModal} disabled={submitting}>
-              Cancelar
-            </Button>
-            <Button
-              onClick={salvarEntrada}
-              variant="contained"
-              disabled={submitting}
-              startIcon={submitting ? <CircularProgress size={16} /> : <AddIcon />}
-            >
-              {submitting ? 'Salvando...' : (editingEntrada ? 'Atualizar' : 'Criar')}
-            </Button>
-          </DialogActions>
-        </Dialog>
+          ))}
+        </Grid>
+      )}
 
-        {/* Feedback Snackbar */}
-        <Snackbar
-          open={feedback.open}
-          autoHideDuration={4000}
-          onClose={() => setFeedback({ ...feedback, open: false })}
-          TransitionComponent={Slide}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        >
-          <Alert
-            onClose={() => setFeedback({ ...feedback, open: false })}
-            severity={feedback.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
+      <Dialog
+        open={modalAberto}
+        onClose={fecharModal}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 2 }
+        }}
+      >
+        <DialogTitle>
+          <Typography variant="h6">
+            {entradaEditando ? 'Editar Entrada' : 'Nova Entrada'}
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
+            <TextField
+              label="Descrição"
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Valor"
+              type="number"
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              fullWidth
+              required
+              InputProps={{
+                startAdornment: <AttachMoney />
+              }}
+            />
+            <TextField
+              label="Data"
+              type="date"
+              value={data}
+              onChange={(e) => setData(e.target.value)}
+              fullWidth
+              required
+              InputLabelProps={{
+                shrink: true
+              }}
+            />
+            <CategorySelector
+              tags={tags}
+              selectedTags={tagsSelecionadas}
+              onChange={setTagsSelecionadas}
+              label="Categorias"
+              placeholder="Selecione as categorias"
+              disabled={submitting}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 1 }}>
+          <Button onClick={fecharModal} disabled={submitting}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={salvarEntrada}
+            variant="contained"
+            disabled={submitting}
           >
-            {feedback.message}
-          </Alert>
-        </Snackbar>
-      </Box>
-    </Layout>
+            {submitting ? 'Salvando...' : 'Salvar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={feedback.open}
+        autoHideDuration={6000}
+        onClose={() => setFeedback({ ...feedback, open: false })}
+        TransitionComponent={Slide}
+      >
+        <Alert
+          onClose={() => setFeedback({ ...feedback, open: false })}
+          severity={feedback.severity}
+          sx={{ width: '100%' }}
+        >
+          {feedback.message}
+        </Alert>
+      </Snackbar>
+    </Container>
   );
 }

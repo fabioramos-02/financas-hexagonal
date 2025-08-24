@@ -3,6 +3,7 @@
     "target": "es5",
     "lib": ["dom", "dom.iterable", "es6"],
     "types": ["jest", "node"],
+    "typeRoots": ["./node_modules/@types", "./tests"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
