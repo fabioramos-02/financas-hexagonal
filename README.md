@@ -1,6 +1,6 @@
 # Sistema de Finanças Pessoais
 
-Um sistema completo para gerenciamento de finanças pessoais desenvolvido com arquitetura hexagonal (Clean Architecture), utilizando Next.js, TypeScript, Prisma e PostgreSQL.
+Um sistema completo para gerenciamento de finanças pessoais desenvolvido com arquitetura hexagonal (Clean Architecture), utilizando Next.js, TypeScript, Prisma e SQLite.
 
 ## 🚀 Funcionalidades
 
@@ -41,8 +41,8 @@ src/
 
 - **Frontend**: Next.js 14, React, TypeScript, Material-UI
 - **Backend**: Next.js API Routes, Prisma ORM
-- **Banco de Dados**: PostgreSQL
-- **Containerização**: Docker & Docker Compose
+- **Banco de Dados**: SQLite (desenvolvimento)
+- **Containerização**: Docker & Docker Compose (opcional)
 - **Testes**: Jest
 - **Linting**: ESLint
 
@@ -50,8 +50,7 @@ src/
 
 - Node.js 18+ 
 - npm ou yarn
-- Docker e Docker Compose (opcional)
-- PostgreSQL (se não usar Docker)
+- Docker e Docker Compose (opcional, para PostgreSQL em produção)
 
 ## 🚀 Como executar
 
@@ -66,30 +65,21 @@ cd financas-hexagonal
 npm install
 ```
 
-### 3. Configure as variáveis de ambiente
+### 3. Configure o banco de dados
+O projeto usa SQLite por padrão para desenvolvimento (não requer configuração adicional).
+
+Para configurar variáveis de ambiente opcionais:
 ```bash
 cp .env.example .env
 ```
 
-Edite o arquivo `.env` com suas configurações:
-```env
-DATABASE_URL="postgresql://financas_user:financas_password@localhost:5432/financas"
-NEXTAUTH_SECRET="your-secret-key-here"
-NEXTAUTH_URL="http://localhost:3000"
-```
-
-### 4. Inicie o banco de dados (Docker)
+### 4. Execute as migrações e popule o banco
 ```bash
-docker compose up -d
+npx prisma migrate dev --name init
+npx prisma db seed
 ```
 
-### 5. Execute as migrações do banco
-```bash
-npx prisma migrate dev
-npx prisma generate
-```
-
-### 6. Inicie a aplicação
+### 5. Inicie a aplicação
 ```bash
 npm run dev
 ```
