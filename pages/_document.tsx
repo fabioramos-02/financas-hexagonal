@@ -2,7 +2,7 @@ import React from 'react';
 import Document, { Html, Head, Main, NextScript, DocumentContext } from 'next/document';
 import createEmotionServer from '@emotion/server/create-instance';
 import { AppType } from 'next/app';
-import createEmotionCache from '../lib/createEmotionCache';
+import createEmotionCache from '../src/ui/lib/createEmotionCache';
 import { MyAppProps } from './_app';
 
 interface MyDocumentProps {
