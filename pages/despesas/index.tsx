@@ -102,7 +102,7 @@ export default function Despesas() {
       const despesasData = await despesasResponse.json();
       const tagsResponse_json = await tagsResponse.json();
 
-      setDespesas(despesasData);
+      setDespesas(despesasData.despesas || []);
       setTags(tagsResponse_json.tags || []);
       setError(null);
     } catch (err) {
@@ -259,7 +259,7 @@ export default function Despesas() {
       <Box sx={{ mb: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Box>
-            <Typography variant="h4" component="h1" gutterBottom>
+            <Typography variant="h3" component="h3" gutterBottom>
               Despesas
             </Typography>
             <Typography variant="body1" color="text.secondary">
@@ -328,7 +328,7 @@ export default function Despesas() {
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                     <Box sx={{ flexGrow: 1 }}>
-                      <Typography variant="h6" component="h2" gutterBottom>
+                      <Typography variant="h6" component="div" gutterBottom>
                         {despesa.descricao}
                       </Typography>
                       <Typography variant="h5" color="error.main" fontWeight="bold">

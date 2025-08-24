@@ -339,7 +339,7 @@ export default function Entradas() {
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                     <Box sx={{ flexGrow: 1 }}>
-                      <Typography variant="h6" component="h2" gutterBottom>
+                      <Typography variant="h6" component="div" gutterBottom>
                         {entrada.descricao}
                       </Typography>
                       <Typography variant="h5" color="success.main" fontWeight="bold">
